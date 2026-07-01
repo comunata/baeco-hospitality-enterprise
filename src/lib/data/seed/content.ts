@@ -1,0 +1,22 @@
+import type { Review, KnowledgeItem, Offer } from "@/lib/types";
+
+export const seedReviews: Review[] = [
+  { id: "rev-1", guestName: "Alexandra M.", rating: 5, comment: "Un loc discret și rafinat, exact ce căutam pentru o aniversare. Personalul a fost impecabil.", roomName: "Executive Suite", createdAt: "2026-05-02", source: "website" },
+  { id: "rev-2", guestName: "Thomas B.", rating: 5, comment: "Quiet, elegant, and every detail carefully considered. We'll be back.", roomName: "Deluxe Garden", createdAt: "2026-04-18", source: "google" },
+  { id: "rev-3", guestName: "Ioana P.", rating: 4, comment: "Apartamentul a fost perfect pentru familia noastră cu doi copii. Recomand!", roomName: "Family Apartment", createdAt: "2026-03-30", source: "booking.com" },
+];
+
+export const seedOffers: Offer[] = [
+  { id: "offer-early-bird", title: { ro: "Rezervă din timp", en: "Early bird" }, description: { ro: "15% reducere pentru rezervări făcute cu minim 60 de zile înainte.", en: "15% off for bookings made at least 60 days in advance." }, discountPercent: 15, validFrom: "2026-01-01", validTo: "2026-12-31", active: true },
+  { id: "offer-family", title: { ro: "Ofertă în familie", en: "Family offer" }, description: { ro: "Copiii sub 6 ani stau gratuit, plus mic dejun inclus pentru toată familia.", en: "Children under 6 stay free, plus breakfast included for the whole family." }, validFrom: "2026-06-01", validTo: "2026-09-15", active: true },
+  { id: "offer-romantic", title: { ro: "Escapadă romantică", en: "Romantic getaway" }, description: { ro: "Pachet romantic inclus + cină cu meniu degustare pentru două persoane.", en: "Romantic package included + tasting menu dinner for two." }, discountPercent: 10, validFrom: "2026-01-01", validTo: "2026-12-31", active: true },
+];
+
+export const seedKnowledgeBase: KnowledgeItem[] = [
+  { id: "kb-checkin", category: "policies", question: { ro: "La ce oră este check-in și check-out?", en: "What time is check-in and check-out?" }, answer: { ro: "Check-in este de la ora 14:00, iar check-out până la ora 11:00. Early check-in și late check-out pot fi solicitate contra cost, în funcție de disponibilitate.", en: "Check-in is from 2:00 PM and check-out is until 11:00 AM. Early check-in and late check-out can be requested for a fee, subject to availability." }, keywords: ["check-in", "check-out", "sosire", "plecare"] },
+  { id: "kb-pets", category: "policies", question: { ro: "Acceptați animale de companie?", en: "Do you accept pets?" }, answer: { ro: "Animalele de companie sunt acceptate în anumite tipuri de camere, cu o taxă suplimentară. Vă rugăm să menționați acest lucru la rezervare.", en: "Pets are accepted in certain room types, for an additional fee. Please mention this when booking." }, keywords: ["animale", "pets", "câine", "pisică"] },
+  { id: "kb-parking", category: "facilities", question: { ro: "Aveți parcare?", en: "Do you have parking?" }, answer: { ro: "Da, oferim parcare privată gratuită pentru toți oaspeții, în limita locurilor disponibile.", en: "Yes, we offer free private parking for all guests, subject to availability." }, keywords: ["parcare", "parking", "mașină"] },
+  { id: "kb-breakfast", category: "restaurant", question: { ro: "Este inclus micul dejun?", en: "Is breakfast included?" }, answer: { ro: "Micul dejun este inclus pentru majoritatea tipurilor de cameră; verificați detaliile camerei selectate. Poate fi adăugat și separat, ca serviciu extra.", en: "Breakfast is included with most room types; check the details of your selected room. It can also be added separately as an extra service." }, keywords: ["mic dejun", "breakfast", "restaurant"] },
+  { id: "kb-cancellation", category: "policies", question: { ro: "Care este politica de anulare?", en: "What is the cancellation policy?" }, answer: { ro: "Anularea este gratuită până la 5 zile înainte de sosire. După acest termen se reține contravaloarea primei nopți.", en: "Free cancellation up to 5 days before arrival. After that, the first night's value is retained." }, keywords: ["anulare", "cancel", "reprogramare"] },
+  { id: "kb-children", category: "policies", question: { ro: "Ce politică aveți pentru copii?", en: "What is your policy for children?" }, answer: { ro: "Copiii sunt bineveniți în toate tipurile de cameră, în limita capacității maxime. Pătuțurile pentru bebeluși sunt gratuite, la cerere.", en: "Children are welcome in all room types, within maximum occupancy. Baby cribs are free upon request." }, keywords: ["copii", "children", "bebeluș", "pătuț"] },
+];

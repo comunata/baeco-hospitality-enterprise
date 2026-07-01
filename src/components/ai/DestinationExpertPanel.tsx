@@ -1,0 +1,60 @@
+import { buildDestinationCards } from "@/lib/destination-planner";
+import type { Locale } from "@/lib/i18n/config";
+
+export function DestinationExpertPanel({ locale }: { locale: Locale }) {
+  const cards = buildDestinationCards(locale).slice(0, 3);
+  const isRo = locale === "ro";
+
+  return (
+    <div className="overflow-hidden rounded-sm border border-champagne/20 bg-gradient-to-br from-graphite via-midnight to-graphite p-6 shadow-2xl shadow-champagne/10 md:p-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-champagne">AI Destination Expert</p>
+          <h2 className="mt-2 font-display text-3xl text-ivory md:text-4xl">Gura Humorului · Bucovina</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-stone">
+            {isRo
+              ? "Itinerar vizual pentru 3 zile: mănăstiri UNESCO, natură, gastronomie locală și rute Google Maps pregătite pentru oaspeți."
+              : "A visual 3-day itinerary: UNESCO monasteries, nature, local food and Google Maps routes ready for guests."}
+          </p>
+        </div>
+        <span className="w-fit rounded-full border border-emerald/30 bg-emerald/10 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-emerald">
+          {isRo ? "cultură · familie · vreme · trasee" : "culture · family · weather · routes"}
+        </span>
+      </div>
+
+      <div className="mt-8 grid gap-5 xl:grid-cols-3">
+        {cards.map((route) => (
+          <article key={route.id} className="flex min-h-full flex-col rounded-sm border border-platinum/10 bg-midnight/55 p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-display text-2xl text-ivory">{route.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-stone">{route.focus}</p>
+              </div>
+              <span className="shrink-0 rounded-full border border-champagne/25 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-champagne">
+                {route.weather === "rainy" ? (isRo ? "ploaie" : "rain") : route.weather === "sunny" ? (isRo ? "soare" : "sun") : (isRo ? "flex" : "flex")}
+              </span>
+            </div>
+
+            <div className="mt-5 flex-1 space-y-3">
+              {route.stops.slice(0, 4).map((stop) => (
+                <div key={`${route.id}-${stop.time}-${stop.name}`} className="rounded-sm border border-platinum/10 bg-graphite/45 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-medium text-ivory"><span className="text-champagne">{stop.time}</span> · {stop.name}</p>
+                    <a href={stop.mapsLink} target="_blank" rel="noreferrer" className="rounded-full border border-emerald/30 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald transition hover:bg-emerald/10">
+                      {isRo ? "Hartă" : "Map"}
+                    </a>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-stone">{stop.note} · {stop.distanceKm} km / {stop.driveMinutes} min</p>
+                </div>
+              ))}
+            </div>
+
+            <a href={route.routeLink} target="_blank" rel="noreferrer" className="mt-5 inline-flex w-fit rounded-sm bg-champagne px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-midnight transition hover:brightness-110">
+              {isRo ? "Deschide ruta completă" : "Open full route"}
+            </a>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}

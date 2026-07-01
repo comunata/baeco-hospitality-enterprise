@@ -1,0 +1,18 @@
+import type { ExtraService } from "@/lib/types";
+
+export const seedServices: ExtraService[] = [
+  { id: "svc-breakfast", slug: "breakfast", name: { ro: "Mic dejun", en: "Breakfast" }, description: { ro: "Mic dejun continental servit în restaurant.", en: "Continental breakfast served in the restaurant." }, price: 18, chargeType: "per_person", active: true },
+  { id: "svc-dinner", slug: "dinner", name: { ro: "Cină", en: "Dinner" }, description: { ro: "Meniu degustare cu preparate locale.", en: "Tasting menu with local dishes." }, price: 35, chargeType: "per_person", active: true },
+  { id: "svc-airport-transfer", slug: "airport-transfer", name: { ro: "Transfer aeroport", en: "Airport transfer" }, description: { ro: "Transfer privat dus-întors.", en: "Private round-trip transfer." }, price: 60, chargeType: "per_booking", active: true },
+  { id: "svc-late-checkout", slug: "late-checkout", name: { ro: "Late check-out", en: "Late check-out" }, description: { ro: "Check-out extins până la ora 16:00.", en: "Extended check-out until 4:00 PM." }, price: 25, chargeType: "per_room", active: true },
+  { id: "svc-early-checkin", slug: "early-checkin", name: { ro: "Early check-in", en: "Early check-in" }, description: { ro: "Check-in de la ora 10:00.", en: "Check-in from 10:00 AM." }, price: 25, chargeType: "per_room", active: true },
+  { id: "svc-extra-bed", slug: "extra-bed", name: { ro: "Pat suplimentar", en: "Extra bed" }, description: { ro: "Pat suplimentar pentru cameră.", en: "Extra bed for the room." }, price: 30, chargeType: "per_night", active: true },
+  { id: "svc-crib", slug: "baby-crib", name: { ro: "Pătuț bebeluș", en: "Baby crib" }, description: { ro: "Pătuț pentru bebeluși, la cerere.", en: "Baby crib available on request." }, price: 0, chargeType: "per_booking", active: true },
+  { id: "svc-romantic-package", slug: "romantic-package", name: { ro: "Pachet romantic", en: "Romantic package" }, description: { ro: "Șampanie, petale de trandafiri și decor în cameră.", en: "Champagne, rose petals and in-room decoration." }, price: 80, chargeType: "per_booking", active: true },
+  { id: "svc-spa-access", slug: "spa-access", name: { ro: "Acces SPA", en: "Spa access" }, description: { ro: "Acces la zona SPA & wellness.", en: "Access to the spa & wellness area." }, price: 40, chargeType: "per_person", active: true },
+  { id: "svc-massage", slug: "massage", name: { ro: "Masaj", en: "Massage" }, description: { ro: "Masaj de relaxare, 50 de minute.", en: "Relaxation massage, 50 minutes." }, price: 70, chargeType: "per_person", active: true },
+  { id: "svc-bike-rental", slug: "bike-rental", name: { ro: "Închiriere biciclete", en: "Bike rental" }, description: { ro: "Bicicletă pentru o zi întreagă.", en: "Bike rental for a full day." }, price: 15, chargeType: "per_night", active: true },
+  { id: "svc-guided-tour", slug: "guided-tour", name: { ro: "Tur ghidat", en: "Guided tour" }, description: { ro: "Tur ghidat al zonei, cu însoțitor local.", en: "Guided tour of the area with a local host." }, price: 45, chargeType: "per_person", active: true },
+  { id: "svc-kids-activities", slug: "kids-activities", name: { ro: "Activități pentru copii", en: "Kids activities" }, description: { ro: "Program de activități supravegheat pentru copii.", en: "Supervised kids activity program." }, price: 20, chargeType: "per_person", active: true },
+  { id: "svc-room-service", slug: "room-service", name: { ro: "Room service", en: "Room service" }, description: { ro: "Servire în cameră, disponibilă 07:00 - 23:00.", en: "In-room dining, available 7:00 AM - 11:00 PM." }, price: 10, chargeType: "per_booking", active: true },
+];
