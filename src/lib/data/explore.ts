@@ -22,10 +22,15 @@ const memoryEvents: LocalEvent[] = [...seedEvents];
  */
 export async function getAttractions(): Promise<Attraction[]> {
   if (isSupabaseConfigured()) {
-    const supabase = await createClient();
-    if (supabase) {
-      const { data, error } = await supabase.from("attractions").select("*");
-      if (!error && data && data.length > 0) return data as unknown as Attraction[];
+    try {
+      const supabase = await createClient();
+      if (supabase) {
+        const { data, error } = await supabase.from("attractions").select("*");
+        if (!error && data && data.length > 0) return data as unknown as Attraction[];
+      }
+    } catch {
+      // Supabase unreachable/misconfigured at runtime — fall back to seed data
+      // instead of crashing the request.
     }
   }
   return memoryAttractions;

@@ -12,10 +12,15 @@ import type { Room } from "@/lib/types";
  */
 export async function getRooms(): Promise<Room[]> {
   if (isSupabaseConfigured()) {
-    const supabase = await createClient();
-    if (supabase) {
-      const { data, error } = await supabase.from("rooms").select("*").eq("active", true);
-      if (!error && data && data.length > 0) return data as unknown as Room[];
+    try {
+      const supabase = await createClient();
+      if (supabase) {
+        const { data, error } = await supabase.from("rooms").select("*").eq("active", true);
+        if (!error && data && data.length > 0) return data as unknown as Room[];
+      }
+    } catch {
+      // Supabase unreachable/misconfigured at runtime — fall back to seed data
+      // instead of crashing the request.
     }
   }
   return seedRooms.filter((r) => r.active);
