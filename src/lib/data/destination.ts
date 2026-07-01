@@ -61,7 +61,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 60,
     tags: ["unesco", "cultură", "fotografie"],
     goodFor: ["family", "romantic", "culture", "rainy-day"],
-    image: "/images/explore/village-river.webp",
+    image: "/images/explore/voronet.webp",
     mapsQuery: "Manastirea Voronet Gura Humorului",
   },
   {
@@ -74,7 +74,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 50,
     tags: ["unesco", "tradiții"],
     goodFor: ["family", "culture", "rainy-day"],
-    image: "/images/explore/cabin-lake.webp",
+    image: "/images/explore/0b426843dddfece952b3c3aa027bd354.jpg",
     mapsQuery: "Manastirea Humor Gura Humorului",
   },
   {
@@ -100,7 +100,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 90,
     tags: ["aventură", "adrenalină", "outdoor"],
     goodFor: ["adventure", "kids", "family"],
-    image: "/images/explore/train-panorama.webp",
+    image: "/images/explore/aad6d71e5cc8168f3b107ef126924f95.jpg",
     mapsQuery: "Mega Tiroliana Bucovina Gura Humorului",
     reservationNote: { ro: "Verifică programul și disponibilitatea înainte de plecare.", en: "Check schedule and availability before departure." },
   },
@@ -114,7 +114,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 180,
     tags: ["familie", "tren", "experiență"],
     goodFor: ["family", "kids", "romantic"],
-    image: "/images/explore/train-panorama.webp",
+    image: "/images/explore/7da693d35809543df6b6f00e974dbadf.jpg",
     mapsQuery: "Mocanita Hutulca Moldovita",
     reservationNote: { ro: "Recomandă rezervare online, mai ales în weekend și sezon.", en: "Online booking is recommended, especially weekends and high season." },
   },
@@ -128,7 +128,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 60,
     tags: ["unesco", "istorie"],
     goodFor: ["family", "culture", "rainy-day"],
-    image: "/images/explore/alpine-lake.webp",
+    image: "/images/explore/d15adec32154b69a742f02e2f60b36f9.jpg",
     mapsQuery: "Manastirea Moldovita",
   },
   {
@@ -141,7 +141,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 70,
     tags: ["unesco", "fortificat"],
     goodFor: ["culture", "rainy-day", "family"],
-    image: "/images/explore/village-river.webp",
+    image: "/images/explore/sucevita.webp",
     mapsQuery: "Manastirea Sucevita",
   },
   {
@@ -154,7 +154,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 25,
     tags: ["belvedere", "fotografie", "natură"],
     goodFor: ["romantic", "adventure"],
-    image: "/images/explore/alpine-lake.webp",
+    image: "/images/explore/bicaz-lake.webp",
     mapsQuery: "Pasul Palma Bucovina",
   },
   {
@@ -167,7 +167,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 90,
     tags: ["istorie", "Ștefan cel Mare"],
     goodFor: ["culture", "rainy-day", "family"],
-    image: "/images/explore/cabin-lake.webp",
+    image: "/images/explore/76bd2ebff6a2a70946f711da036ba39b.jpg",
     mapsQuery: "Manastirea Putna",
   },
   {
@@ -180,7 +180,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 45,
     tags: ["meșteșug", "suveniruri"],
     goodFor: ["family", "kids", "rainy-day", "culture"],
-    image: "/images/explore/forest-stream.webp",
+    image: "/images/explore/2a087e23a961d9666ae8723d804fa4ac.jpg",
     mapsQuery: "Ceramica Neagra Marginea",
   },
   {
@@ -193,7 +193,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 90,
     tags: ["istorie", "muzeu"],
     goodFor: ["family", "kids", "rainy-day", "culture"],
-    image: "/images/explore/village-river.webp",
+    image: "/images/explore/2dfb12d1da3716e851848a54d2a77121.jpg",
     mapsQuery: "Cetatea de Scaun a Sucevei",
   },
   {
@@ -206,7 +206,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 75,
     tags: ["tradiții", "muzeu"],
     goodFor: ["family", "kids", "rainy-day", "culture"],
-    image: "/images/explore/cabin-lake.webp",
+    image: "/images/explore/f799e86ae64e8d883962426c657bf965.jpg",
     mapsQuery: "Muzeul Satului Bucovinean Suceava",
   },
   {
@@ -219,7 +219,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 60,
     tags: ["shopping", "indoor"],
     goodFor: ["rainy-day", "family"],
-    image: "/images/explore/forest-stream.webp",
+    image: "/images/explore/voronet.webp",
     mapsQuery: "Bucovina Shopping City Suceava",
   },
   {

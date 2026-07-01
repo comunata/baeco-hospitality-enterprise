@@ -35,16 +35,27 @@ export function DestinationExpertPanel({ locale }: { locale: Locale }) {
               </span>
             </div>
 
-            <div className="mt-5 flex-1 space-y-3">
-              {route.stops.slice(0, 4).map((stop) => (
-                <div key={`${route.id}-${stop.time}-${stop.name}`} className="rounded-sm border border-platinum/10 bg-graphite/45 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-medium text-ivory"><span className="text-champagne">{stop.time}</span> · {stop.name}</p>
-                    <a href={stop.mapsLink} target="_blank" rel="noreferrer" className="rounded-full border border-emerald/30 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald transition hover:bg-emerald/10">
-                      {isRo ? "Hartă" : "Map"}
-                    </a>
+            <div className="mt-5 flex-1 space-y-4">
+              {route.stops.slice(0, 4).map((stop, stopIndex) => (
+                <div
+                  key={`${route.id}-${stop.time}-${stop.name}`}
+                  className="flex gap-3 rounded-sm border border-platinum/10 border-l-2 border-l-champagne/50 bg-graphite/45 p-4 transition-colors duration-300 hover:border-l-champagne hover:bg-graphite/70"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-champagne/30 bg-midnight/60 text-[11px] font-semibold text-champagne">
+                    {stopIndex + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-ivory">
+                        <span className="rounded-full bg-champagne/15 px-2 py-0.5 text-xs font-semibold tracking-wide text-champagne">{stop.time}</span>{" "}
+                        <span className="ml-1">{stop.name}</span>
+                      </p>
+                      <a href={stop.mapsLink} target="_blank" rel="noreferrer" className="rounded-full border border-emerald/30 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald transition hover:bg-emerald/10">
+                        {isRo ? "Hartă" : "Map"}
+                      </a>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-stone">{stop.note} · {stop.distanceKm} km / {stop.driveMinutes} min</p>
                   </div>
-                  <p className="mt-2 text-xs leading-5 text-stone">{stop.note} · {stop.distanceKm} km / {stop.driveMinutes} min</p>
                 </div>
               ))}
             </div>

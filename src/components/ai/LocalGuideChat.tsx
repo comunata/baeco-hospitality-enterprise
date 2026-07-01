@@ -97,16 +97,27 @@ export function LocalGuideChat({ locale, dict }: { locale: Locale; dict: Diction
                           </span>
                         </div>
                         <p className="mt-2 text-xs leading-5 text-stone">{route.focus}</p>
-                        <div className="mt-4 space-y-2">
-                          {route.stops.slice(0, 4).map((stop) => (
-                            <div key={`${route.id}-${stop.time}-${stop.name}`} className="rounded-sm border border-platinum/10 bg-midnight/45 p-3">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-xs font-medium text-ivory"><span className="text-champagne">{stop.time}</span> · {stop.name}</p>
-                                <a href={stop.mapsLink} target="_blank" rel="noreferrer" className="text-[10px] uppercase tracking-widest text-emerald underline">
-                                  {isRo ? "Hartă" : "Map"}
-                                </a>
+                        <div className="mt-4 space-y-3">
+                          {route.stops.slice(0, 4).map((stop, stopIndex) => (
+                            <div
+                              key={`${route.id}-${stop.time}-${stop.name}`}
+                              className="flex gap-2.5 rounded-sm border border-platinum/10 border-l-2 border-l-champagne/50 bg-midnight/45 p-3"
+                            >
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-champagne/30 bg-graphite/60 text-[9px] font-semibold text-champagne">
+                                {stopIndex + 1}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-xs font-medium text-ivory">
+                                    <span className="rounded-full bg-champagne/15 px-1.5 py-0.5 text-[10px] font-semibold text-champagne">{stop.time}</span>{" "}
+                                    <span className="ml-0.5">{stop.name}</span>
+                                  </p>
+                                  <a href={stop.mapsLink} target="_blank" rel="noreferrer" className="shrink-0 text-[10px] uppercase tracking-widest text-emerald underline">
+                                    {isRo ? "Hartă" : "Map"}
+                                  </a>
+                                </div>
+                                <p className="mt-1 text-[11px] leading-5 text-stone">{stop.note} · {stop.distanceKm} km / {stop.driveMinutes} min</p>
                               </div>
-                              <p className="mt-1 text-[11px] leading-5 text-stone">{stop.note} · {stop.distanceKm} km / {stop.driveMinutes} min</p>
                             </div>
                           ))}
                         </div>
