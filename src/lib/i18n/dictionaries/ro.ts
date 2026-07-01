@@ -264,6 +264,7 @@ const ro = {
       vouchers: "Vouchere",
       reviews: "Review-uri",
       explore: "Explore Area",
+      discovery: "AI Discovery",
       restaurants: "Restaurante",
       attractions: "Atracții",
       events: "Evenimente",

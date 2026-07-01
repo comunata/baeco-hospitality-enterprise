@@ -3,6 +3,8 @@ import Image from "next/image";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n";
 import { getAttractions, getLocalEvents } from "@/lib/data/explore";
+import { getApprovedPlaces } from "@/lib/data/discovery";
+import type { BdCategory, DiscoveredPlace } from "@/lib/discovery/types";
 import { destinationRoutes } from "@/lib/data/destination";
 import { getWeatherToday } from "@/lib/integrations/weather";
 import { PageHeader } from "@/components/pages/PageHeader";
@@ -55,6 +57,47 @@ function imageFor(attraction: Attraction, index: number) {
   if (attractionImageOverrides[attraction.id]) return attractionImageOverrides[attraction.id];
   const pool = categoryImagePools[attraction.category];
   return pool[index % pool.length];
+}
+
+/**
+ * Approved places from the Hospitality Intelligence Engine are merged into
+ * the Explore sections. Experience categories map onto the page's sections;
+ * practical ones (transport/health/fuel/services) stay out of Explore — they
+ * serve the AI Concierge, not the discovery narrative.
+ */
+const bdToExploreCategory: Partial<Record<BdCategory, Attraction["category"]>> = {
+  attraction: "attraction",
+  culture: "attraction",
+  nature: "attraction",
+  trail: "attraction",
+  adventure: "attraction",
+  sport: "attraction",
+  wellness: "attraction",
+  family: "attraction",
+  restaurant: "restaurant",
+  bar: "restaurant",
+  cafe: "cafe",
+  shopping: "shop",
+  market: "market",
+  producer: "producer",
+};
+
+function discoveredToAttraction(place: DiscoveredPlace): Attraction | null {
+  const category = bdToExploreCategory[place.category];
+  if (!category) return null;
+  return {
+    id: `discovered-${place.id}`,
+    name: { ro: place.name, en: place.nameEn ?? place.name },
+    category,
+    description: place.description,
+    image: place.image,
+    distanceKm: place.distanceKm,
+    driveMinutes: place.driveMinutes,
+    tags: place.tags,
+    goodFor: place.goodFor.filter((g): g is Attraction["goodFor"][number] => ["family", "romantic", "rainy-day", "kids"].includes(g)),
+    lat: place.lat,
+    lng: place.lng,
+  };
 }
 
 const categoryLabelKey: Record<Attraction["category"], keyof Dictionary["explore"]> = {
@@ -125,7 +168,19 @@ export default async function ExplorePage({ params }: { params: Promise<{ locale
   if (!isLocale(rawLocale)) notFound();
   const locale = rawLocale as Locale;
   const dict = getDictionary(locale);
-  const [attractions, events, weather] = await Promise.all([getAttractions(), getLocalEvents(), getWeatherToday()]);
+  const [seedAttractionsList, events, weather, approvedPlaces] = await Promise.all([
+    getAttractions(),
+    getLocalEvents(),
+    getWeatherToday(),
+    getApprovedPlaces().catch(() => []),
+  ]);
+
+  // Merge Intelligence Engine results into the curated list, deduped by name.
+  const knownNames = new Set(seedAttractionsList.map((a) => (a.name.ro ?? a.name.en ?? "").toLowerCase()));
+  const discovered = approvedPlaces
+    .map(discoveredToAttraction)
+    .filter((a): a is Attraction => a !== null && !knownNames.has(a.name.ro.toLowerCase()));
+  const attractions = [...seedAttractionsList, ...discovered];
 
   const attractionItems = attractions.filter((a) => a.category === "attraction");
   const restaurantItems = attractions.filter((a) => a.category === "restaurant");

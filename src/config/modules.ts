@@ -13,6 +13,7 @@ export type ModuleKey =
   | "portal"
   | "aiConcierge"
   | "aiLocalGuide"
+  | "discoveryEngine"
   | "explore"
   | "aiKnowledgeBase"
   | "seo"
@@ -34,6 +35,7 @@ export const MODULES: ModuleDefinition[] = [
   { key: "portal", label: "Portal Client", description: "Cont client: rezervări, facturi, check-in online.", defaultEnabled: true },
   { key: "aiConcierge", label: "AI Concierge", description: "Asistent AI pentru oaspeți, bazat pe Knowledge Base.", defaultEnabled: true },
   { key: "aiLocalGuide", label: "AI Local Guide", description: "Ghid local AI: ce vizităm, unde mâncăm, planuri de vacanță.", defaultEnabled: true },
+  { key: "discoveryEngine", label: "Hospitality Intelligence Engine", description: "Descoperă și actualizează automat atracții, restaurante și servicii în jurul proprietății; alimentează Explore și toți agenții AI.", defaultEnabled: true },
   { key: "explore", label: "Explore Area", description: "Pagină cu atracții, restaurante, trasee, evenimente locale.", defaultEnabled: true },
   { key: "aiKnowledgeBase", label: "AI Knowledge Base", description: "Bază de cunoștințe folosită de toate modulele AI.", defaultEnabled: true },
   { key: "seo", label: "SEO Enterprise", description: "Sitemap, robots, schema.org, Open Graph, hreflang.", defaultEnabled: true },

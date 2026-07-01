@@ -266,6 +266,7 @@ const en: Dictionary = {
       vouchers: "Vouchers",
       reviews: "Reviews",
       explore: "Explore Area",
+      discovery: "AI Discovery",
       restaurants: "Restaurants",
       attractions: "Attractions",
       events: "Events",

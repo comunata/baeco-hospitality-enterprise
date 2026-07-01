@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getKnowledgeBase } from "@/lib/data/content";
 import { getRooms } from "@/lib/data/rooms";
+import { buildAiAreaContext } from "@/lib/intelligence/planner";
 import { getBookingsForGuestEmail } from "@/lib/data/bookings";
 import { getPortalSession } from "@/lib/portal/session";
 import { completeChat } from "@/lib/integrations/ai";
@@ -63,11 +64,18 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (!bestMatch && !matchedRoom && !matchedBooking) {
+  // Area questions ("unde pot mânca?", "ce e în apropiere?") are grounded in
+  // the Hospitality Intelligence Engine's admin-approved knowledge base.
+  const areaKeywords = ["unde", "aproape", "apropiere", "zona", "restaurant", "mananc", "manc", "farmacie", "benzinarie", "atractie", "vizit", "where", "nearby", "area", "eat", "pharmacy", "fuel", "visit", "attraction"];
+  const asksAboutArea = areaKeywords.some((k) => normalize(question).includes(normalize(k)));
+  const areaContext = asksAboutArea ? await buildAiAreaContext(locale) : "";
+
+  if (!bestMatch && !matchedRoom && !matchedBooking && !areaContext) {
     return NextResponse.json({ answer: dict.ai.concierge.handoffText, handoff: true });
   }
 
   const groundingFacts: string[] = [];
+  if (areaContext) groundingFacts.push(areaContext);
   if (bestMatch) groundingFacts.push(`Q: ${bestMatch.question[locale] ?? bestMatch.question.en}\nA: ${bestMatch.answer[locale] ?? bestMatch.answer.en}`);
   if (matchedRoom) {
     groundingFacts.push(

@@ -15,6 +15,7 @@ export interface AdminNavItem {
     | "vouchers"
     | "reviews"
     | "explore"
+    | "discovery"
     | "restaurants"
     | "attractions"
     | "events"
@@ -65,6 +66,7 @@ export const adminNavGroups: AdminNavGroup[] = [
   {
     title: "Explore Area",
     items: [
+      { href: "/admin/discovery", labelKey: "discovery" },
       { href: "/admin/explore", labelKey: "explore" },
       { href: "/admin/restaurants", labelKey: "restaurants" },
       { href: "/admin/attractions", labelKey: "attractions" },
