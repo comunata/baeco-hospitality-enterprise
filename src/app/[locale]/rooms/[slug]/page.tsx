@@ -2,7 +2,8 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
-import { getRoomBySlug, getRooms } from "@/lib/data/rooms";
+import { getRoomBySlug } from "@/lib/data/rooms";
+import { seedRooms } from "@/lib/data/seed/rooms";
 import { getServicesByIds } from "@/lib/data/services";
 import { Section } from "@/components/ui/Section";
 import { LinkButton } from "@/components/ui/Button";
@@ -145,10 +146,13 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export async function generateStaticParams() {
-  const rooms = await getRooms();
-  return rooms.flatMap((r) => [
-    { locale: "ro", slug: r.slug },
-    { locale: "en", slug: r.slug },
-  ]);
+// Static/deterministic: must not call cookies()/headers()/Supabase (getRooms()
+// does via createClient()), which Next.js disallows inside generateStaticParams.
+export function generateStaticParams() {
+  return seedRooms
+    .filter((r) => r.active)
+    .flatMap((r) => [
+      { locale: "ro", slug: r.slug },
+      { locale: "en", slug: r.slug },
+    ]);
 }
