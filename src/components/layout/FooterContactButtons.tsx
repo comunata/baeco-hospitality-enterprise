@@ -3,7 +3,7 @@
  * only as click targets (tel: / wa.me) — never rendered as visible text,
  * per the "no numbers on the page" requirement.
  */
-const CALL_NUMBER = "+40754417713";
+const CALL_NUMBER = "+40757239757";
 const WHATSAPP_NUMBER = "40757239757";
 
 export function FooterContactButtons({ dict }: { dict: { call: string; whatsapp: string } }) {
