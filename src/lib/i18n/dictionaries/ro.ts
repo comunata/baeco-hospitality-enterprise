@@ -325,6 +325,11 @@ const ro = {
       heading: "Rezervarea ta este confirmată",
       body: "Îți mulțumim, {{guestName}}! Rezervarea ta pentru {{roomName}} din {{checkIn}} până în {{checkOut}} este confirmată.",
     },
+    propertyBookingNotification: {
+      subject: "Rezervare nouă primită — {{roomName}}",
+      heading: "Rezervare nouă primită",
+      body: "Client: {{guestName}}<br>Cameră: {{roomName}}<br>Perioadă: {{checkIn}} - {{checkOut}}<br>Cod rezervare: {{bookingCode}}<br>Verifică rezervarea în admin.",
+    },
     reminder: {
       subject: "Sejurul tău la {{propertyName}} începe în curând",
       heading: "Te așteptăm în curând",
@@ -347,7 +352,7 @@ const ro = {
   },
   whatsapp: {
     confirmation: "Bună {{guestName}}! Rezervarea ta la {{propertyName}} pentru {{roomName}} ({{checkIn}} - {{checkOut}}) este confirmată. Cod rezervare: {{bookingCode}}.",
-    adminNotification: "Rezervare nouă: {{guestName}}, {{roomName}}, {{checkIn}} - {{checkOut}}.",
+    adminNotification: "Rezervare nouă primită.\nClient: {{guestName}}\nCameră: {{roomName}}\nPerioadă: {{checkIn}} - {{checkOut}}\nCod rezervare: {{bookingCode}}\nVerifică rezervarea în admin.",
     cancellation: "Bună {{guestName}}, rezervarea ta pentru {{roomName}} ({{checkIn}} - {{checkOut}}) a fost anulată. Cod rezervare: {{bookingCode}}.",
     followUp: "Bună {{guestName}}, sperăm că te-ai bucurat de sejur. Ne-ar plăcea să auzim părerea ta!",
     aiHandoff: "Salut! Am fost redirecționat de asistentul AI de pe site pentru o întrebare: \"{{question}}\"",

@@ -327,6 +327,11 @@ const en: Dictionary = {
       heading: "Your booking is confirmed",
       body: "Thank you, {{guestName}}! Your booking for {{roomName}} from {{checkIn}} to {{checkOut}} is confirmed.",
     },
+    propertyBookingNotification: {
+      subject: "New booking received — {{roomName}}",
+      heading: "New booking received",
+      body: "Guest: {{guestName}}<br>Room: {{roomName}}<br>Dates: {{checkIn}} - {{checkOut}}<br>Booking code: {{bookingCode}}<br>Check the booking in the admin panel.",
+    },
     reminder: {
       subject: "Your stay at {{propertyName}} starts soon",
       heading: "See you soon",
@@ -349,7 +354,7 @@ const en: Dictionary = {
   },
   whatsapp: {
     confirmation: "Hi {{guestName}}! Your booking at {{propertyName}} for {{roomName}} ({{checkIn}} - {{checkOut}}) is confirmed. Booking code: {{bookingCode}}.",
-    adminNotification: "New booking: {{guestName}}, {{roomName}}, {{checkIn}} - {{checkOut}}.",
+    adminNotification: "New booking received.\nGuest: {{guestName}}\nRoom: {{roomName}}\nDates: {{checkIn}} - {{checkOut}}\nBooking code: {{bookingCode}}\nCheck the booking in the admin panel.",
     cancellation: "Hi {{guestName}}, your booking for {{roomName}} ({{checkIn}} - {{checkOut}}) has been cancelled. Booking code: {{bookingCode}}.",
     followUp: "Hi {{guestName}}, we hope you enjoyed your stay. We'd love to hear your feedback!",
     aiHandoff: "Hello! I was redirected by the website's AI assistant with a question: \"{{question}}\"",

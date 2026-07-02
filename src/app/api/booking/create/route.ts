@@ -8,7 +8,8 @@ import { getBookingSettings } from "@/lib/data/settings";
 import { calculateBookingPrice, eachNight } from "@/lib/pricing";
 import { createBooking, generateBookingCode, getAvailableUnits } from "@/lib/data/bookings";
 import { sendEmail } from "@/lib/integrations/email";
-import { buildWhatsappLink } from "@/lib/integrations/whatsapp";
+import { buildWhatsappLink, sendWhatsappTemplate } from "@/lib/integrations/whatsapp";
+import { getPropertyContactInfo } from "@/lib/data/property";
 import { getDictionary } from "@/lib/i18n";
 import { isLocale, defaultLocale } from "@/lib/i18n/config";
 import { renderTemplate } from "@/lib/i18n/template";
@@ -190,6 +191,7 @@ export async function POST(request: NextRequest) {
     .join("");
 
   const primaryRoom = resolved[0].room;
+  const contact = await getPropertyContactInfo();
   const emailVars = {
     propertyName: siteConfig.name,
     guestName: `${input.guest.firstName} ${input.guest.lastName}`,
@@ -197,25 +199,68 @@ export async function POST(request: NextRequest) {
     checkIn: formatDate(input.checkIn, locale === "ro" ? "ro-RO" : "en-GB"),
     checkOut: formatDate(input.checkOut, locale === "ro" ? "ro-RO" : "en-GB"),
   };
+  const notificationVars = { ...emailVars, bookingCode: groupCode };
 
-  await sendEmail({
-    to: input.guest.email,
-    subject: renderTemplate(dict.emails.bookingConfirmation.subject, emailVars),
-    html:
-      `<h1>${renderTemplate(dict.emails.bookingConfirmation.heading, emailVars)}</h1>` +
-      `<p>${renderTemplate(dict.emails.bookingConfirmation.body, emailVars)}</p>` +
-      `<ul>${roomLines}</ul>` +
-      `<p><strong>Total: ${formatCurrency(grandTotal, currency)}</strong></p>` +
-      `<p>${dict.booking.summary}: ${groupCode}</p>`,
-  });
+  // Two distinct audiences, two distinct templates — never swapped:
+  // - guestConfirmationTemplate: 2nd person ("your booking"), sent to the
+  //   email/phone the guest typed into the booking form.
+  // - propertyNotificationTemplate: 3rd person internal alert ("new booking
+  //   received"), sent to the property's own contact email/WhatsApp. It
+  //   must never carry the guest-worded confirmation text.
+  const guestConfirmationTemplate = dict.emails.bookingConfirmation;
+  const propertyNotificationTemplate = dict.emails.propertyBookingNotification;
 
-  const whatsappMessage = renderTemplate(dict.whatsapp.confirmation, { ...emailVars, bookingCode: groupCode });
+  // Notification delivery is best-effort and independent per channel: a
+  // failure sending one (email provider down, WhatsApp API misconfigured)
+  // must never skip the others or fail the booking itself, which is
+  // already committed at this point.
+  try {
+    await sendEmail({
+      to: input.guest.email,
+      subject: renderTemplate(guestConfirmationTemplate.subject, emailVars),
+      html:
+        `<h1>${renderTemplate(guestConfirmationTemplate.heading, emailVars)}</h1>` +
+        `<p>${renderTemplate(guestConfirmationTemplate.body, emailVars)}</p>` +
+        `<ul>${roomLines}</ul>` +
+        `<p><strong>Total: ${formatCurrency(grandTotal, currency)}</strong></p>` +
+        `<p>${dict.booking.summary}: ${groupCode}</p>`,
+    });
+  } catch {
+    // Logged by the integration adapter itself (mock mode logs to console).
+  }
+
+  try {
+    if (input.guest.phone) {
+      await sendWhatsappTemplate(input.guest.phone, renderTemplate(dict.whatsapp.confirmation, notificationVars));
+    }
+  } catch {
+    // Logged by the integration adapter itself (mock mode logs to console).
+  }
+
+  try {
+    await sendEmail({
+      to: contact.email,
+      subject: renderTemplate(propertyNotificationTemplate.subject, notificationVars),
+      html:
+        `<h1>${renderTemplate(propertyNotificationTemplate.heading, notificationVars)}</h1>` +
+        `<p>${renderTemplate(propertyNotificationTemplate.body, notificationVars)}</p>` +
+        `<ul>${roomLines}</ul>` +
+        `<p><strong>Total: ${formatCurrency(grandTotal, currency)}</strong></p>`,
+    });
+  } catch {
+    // Logged by the integration adapter itself (mock mode logs to console).
+  }
+
+  // The "message us on WhatsApp" link on the confirmation screen opens a
+  // chat addressed to the PROPERTY's number, so it must carry the property
+  // notification wording, not the guest-worded confirmation text.
+  const propertyWhatsappMessage = renderTemplate(dict.whatsapp.adminNotification, notificationVars);
 
   return NextResponse.json({
     booking: created[0], // backward-compatible single-room shape
     bookings: created,
     groupCode,
     grandTotal,
-    whatsappLink: buildWhatsappLink(whatsappMessage, siteConfig.contact.whatsapp),
+    whatsappLink: buildWhatsappLink(propertyWhatsappMessage, contact.whatsapp),
   });
 }
