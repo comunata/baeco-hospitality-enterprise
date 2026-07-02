@@ -29,7 +29,17 @@ export function PageContentForm({ page }: { page: PageContent }) {
       <TextArea label="Conținut (RO)" name="bodyRo" defaultValue={page.body?.ro} rows={6} />
       <TextArea label="Conținut (EN)" name="bodyEn" defaultValue={page.body?.en} rows={6} />
 
-      <TextArea label="Galerie foto (câte un URL pe linie)" name="gallery" defaultValue={page.gallery.join("\n")} rows={5} />
+      {page.slug === "gallery" ? (
+        <p className="rounded-sm border border-platinum/15 bg-graphite/40 px-4 py-3 text-sm text-stone">
+          Imaginile galeriei se gestionează acum din{" "}
+          <Link href="/admin/gallery" className="text-champagne underline underline-offset-2 hover:opacity-80">
+            modulul Galerie
+          </Link>{" "}
+          (upload, reordonare, titlu/ALT) — nu se mai editează ca listă de URL-uri aici.
+        </p>
+      ) : (
+        <TextArea label="Galerie foto (câte un URL pe linie)" name="gallery" defaultValue={page.gallery.join("\n")} rows={5} />
+      )}
 
       <div className="flex gap-3">
         <button type="submit" disabled={pending} className="rounded-sm bg-champagne px-6 py-2.5 text-sm font-medium text-midnight hover:opacity-90 disabled:opacity-50">

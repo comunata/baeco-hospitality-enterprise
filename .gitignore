@@ -24,6 +24,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local-dev-only gallery upload fallback (no Supabase configured) — never
+# a real asset, must not be committed or deployed
+/public/uploads/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

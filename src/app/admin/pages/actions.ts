@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { upsertPage } from "@/lib/data/pages";
+import { getPage, upsertPage } from "@/lib/data/pages";
 import { assertAdminRole } from "@/lib/admin/session";
 
 const pageSchema = z.object({
@@ -36,12 +36,19 @@ export async function savePageAction(_prevState: PageFormState, formData: FormDa
   const data = parsed.data;
 
   try {
+    // The "gallery" slug's field isn't in this form anymore (see
+    // PageContentForm) — its images are managed by /admin/gallery, which
+    // keeps this same PageContent.gallery array in sync after every
+    // upload/reorder/delete. Omitting the field here must never wipe that
+    // array back to empty, so only overwrite it when the form actually
+    // submitted one (i.e. every slug except "gallery").
+    const existing = data.gallery === undefined ? await getPage(data.slug) : undefined;
     await upsertPage({
       slug: data.slug,
       title: { ro: data.titleRo, en: data.titleEn?.trim() || data.titleRo },
       subtitle: { ro: data.subtitleRo ?? "", en: data.subtitleEn?.trim() || data.subtitleRo || "" },
       body: { ro: data.bodyRo ?? "", en: data.bodyEn?.trim() || data.bodyRo || "" },
-      gallery: linesToArray(data.gallery),
+      gallery: data.gallery !== undefined ? linesToArray(data.gallery) : (existing?.gallery ?? []),
     });
   } catch (err) {
     return { error: err instanceof Error ? err.message : "A apărut o eroare la salvare." };
