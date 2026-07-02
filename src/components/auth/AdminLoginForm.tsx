@@ -39,6 +39,8 @@ export function AdminLoginForm({ dict }: { dict: Dictionary }) {
         setError(t.invalidCredentials);
         return;
       }
+      // Best-effort — a failed last-login write must never block sign-in.
+      fetch("/api/admin/mark-login", { method: "POST" }).catch(() => {});
       router.refresh();
     } finally {
       setLoading(false);

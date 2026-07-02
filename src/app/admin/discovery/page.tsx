@@ -16,7 +16,7 @@ const statusLabel: Record<DiscoveredPlace["status"], { label: string; className:
 };
 
 export default async function AdminDiscoveryPage() {
-  await requireAdminRole("owner", "manager", "staff");
+  await requireAdminRole("HOTEL_ADMIN");
 
   const [profile, places, scans] = await Promise.all([getPropertyProfile(), listPlaces(), listScans(5)]);
 

@@ -1,5 +1,9 @@
 export interface AdminNavItem {
   href: string;
+  /** Hidden from the sidebar for anyone but SUPER_ADMIN — still enforced
+   * server-side regardless (see requireAdminRole in the page itself), this
+   * just avoids a confusing dead-end link for roles that can't open it. */
+  superAdminOnly?: boolean;
   labelKey:
     | "dashboard"
     | "calendar"
@@ -87,9 +91,9 @@ export const adminNavGroups: AdminNavGroup[] = [
     title: "Sistem",
     items: [
       { href: "/admin/settings", labelKey: "settings" },
-      { href: "/admin/users", labelKey: "users" },
-      { href: "/admin/roles", labelKey: "roles" },
-      { href: "/admin/integrations", labelKey: "integrations" },
+      { href: "/admin/users", labelKey: "users", superAdminOnly: true },
+      { href: "/admin/roles", labelKey: "roles", superAdminOnly: true },
+      { href: "/admin/integrations", labelKey: "integrations", superAdminOnly: true },
     ],
   },
 ];

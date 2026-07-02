@@ -8,7 +8,7 @@ import type { BookingStatus } from "@/lib/types";
 const VALID_STATUSES: BookingStatus[] = ["pending", "confirmed", "cancelled", "completed"];
 
 export async function setBookingStatusAction(code: string, status: BookingStatus): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   if (!VALID_STATUSES.includes(status)) return;
   await updateBookingStatus(code, status);
   revalidatePath("/admin/bookings");

@@ -46,7 +46,7 @@ const metaSchema = z.object({
 });
 
 export async function updateMediaMetaAction(_prevState: MediaActionState, formData: FormData): Promise<MediaActionState> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   const raw = Object.fromEntries(formData.entries());
   const parsed = metaSchema.safeParse(raw);
   if (!parsed.success) return { error: "Date invalide." };
@@ -66,19 +66,19 @@ export async function updateMediaMetaAction(_prevState: MediaActionState, formDa
 }
 
 export async function setPrimaryMediaAction(ownerType: MediaOwnerType, ownerId: string | null, id: string): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   await setPrimaryMediaItem(ownerType, ownerId, id);
   await revalidateOwner(ownerType, ownerId);
 }
 
 export async function reorderMediaAction(ownerType: MediaOwnerType, ownerId: string | null, orderedIds: string[]): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   await reorderMediaItems(ownerType, ownerId, orderedIds);
   await revalidateOwner(ownerType, ownerId);
 }
 
 export async function deleteMediaAction(ownerType: MediaOwnerType, ownerId: string | null, id: string): Promise<void> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   await deleteMediaItem(ownerType, ownerId, id);
   await revalidateOwner(ownerType, ownerId);
 }

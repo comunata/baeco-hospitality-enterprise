@@ -42,7 +42,7 @@ function linesToArray(value?: string): string[] {
 }
 
 export async function saveRoomAction(_prevState: RoomFormState, formData: FormData): Promise<RoomFormState> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   const raw = Object.fromEntries(formData.entries());
   const parsed = roomSchema.safeParse(raw);
 
@@ -105,7 +105,7 @@ export async function saveRoomAction(_prevState: RoomFormState, formData: FormDa
 }
 
 export async function deleteRoomAction(id: string): Promise<void> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   await deleteRoom(id);
   revalidatePath("/admin/rooms");
 }

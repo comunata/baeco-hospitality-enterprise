@@ -17,7 +17,7 @@ export interface BlockFormState {
 }
 
 export async function createRoomBlockAction(_prevState: BlockFormState, formData: FormData): Promise<BlockFormState> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   const raw = Object.fromEntries(formData.entries());
   const parsed = blockSchema.safeParse(raw);
   if (!parsed.success) {
@@ -39,7 +39,7 @@ export async function createRoomBlockAction(_prevState: BlockFormState, formData
 }
 
 export async function deleteRoomBlockAction(id: string): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   await deleteRoomBlock(id);
   revalidatePath("/admin/calendar");
 }

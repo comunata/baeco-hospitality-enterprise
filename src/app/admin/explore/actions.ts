@@ -35,7 +35,7 @@ function linesToArray(value?: string): string[] {
 }
 
 export async function saveAttractionAction(_prevState: AttractionFormState, formData: FormData): Promise<AttractionFormState> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   const raw = {
     ...Object.fromEntries(formData.entries()),
     goodFor: formData.getAll("goodFor"),
@@ -79,7 +79,7 @@ export async function saveAttractionAction(_prevState: AttractionFormState, form
 }
 
 export async function deleteAttractionAction(id: string): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   await deleteAttraction(id);
   revalidatePath("/admin/attractions");
   revalidatePath("/admin/restaurants");
@@ -102,7 +102,7 @@ export interface EventFormState {
 }
 
 export async function saveEventAction(_prevState: EventFormState, formData: FormData): Promise<EventFormState> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   const raw = Object.fromEntries(formData.entries());
   const parsed = eventSchema.safeParse(raw);
 
@@ -136,7 +136,7 @@ export async function saveEventAction(_prevState: EventFormState, formData: Form
 }
 
 export async function deleteEventAction(id: string): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   await deleteLocalEvent(id);
   revalidatePath("/admin/events");
   revalidatePath("/admin/explore");

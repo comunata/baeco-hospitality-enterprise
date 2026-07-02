@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/admin/AdminTable";
 export default async function AdminIntegrationsPage() {
   // Owner-only: this page lists which integrations are configured, which is
   // sensitive operational detail (though not the secret values themselves).
-  await requireAdminRole("owner");
+  await requireAdminRole("SUPER_ADMIN");
   const { dict } = await getServerDictionary();
   const statuses = getIntegrationStatuses();
 

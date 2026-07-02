@@ -51,9 +51,13 @@ export async function POST(request: NextRequest) {
   if (limited) return limited;
 
   try {
-    await assertAdminRole("owner", "manager", "staff");
-  } catch {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    await assertAdminRole("HOTEL_ADMIN");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "forbidden";
+    // MediaManager reads `data.errors` (an array), not `data.error` — match
+    // that shape so a blocked Demo Admin upload shows the real message
+    // instead of silently doing nothing.
+    return NextResponse.json({ created: [], errors: [{ name: "acces", error: message }] }, { status: 403 });
   }
 
   const formData = await request.formData().catch(() => null);

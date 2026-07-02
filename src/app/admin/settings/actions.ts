@@ -8,7 +8,7 @@ import { updatePropertyContactInfo } from "@/lib/data/property";
 import { MODULES, type ModuleKey } from "@/config/modules";
 
 export async function toggleModuleAction(key: ModuleKey, enabled: boolean): Promise<void> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   if (!MODULES.some((m) => m.key === key)) return;
   await saveModuleOverrides({ [key]: enabled });
   revalidatePath("/admin/settings");
@@ -30,7 +30,7 @@ export async function saveBookingSettingsAction(
   _prev: BookingSettingsFormState,
   formData: FormData
 ): Promise<BookingSettingsFormState> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   const parsed = bookingSettingsSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { error: "Verifică valorile introduse." };
   const data = parsed.data;
@@ -68,7 +68,7 @@ export async function savePropertyContactAction(
   _prev: PropertyContactFormState,
   formData: FormData
 ): Promise<PropertyContactFormState> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   const parsed = propertyContactSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Verifică valorile introduse." };
   try {

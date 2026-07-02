@@ -28,7 +28,7 @@ export interface ServiceFormState {
 }
 
 export async function saveServiceAction(_prevState: ServiceFormState, formData: FormData): Promise<ServiceFormState> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   const raw = Object.fromEntries(formData.entries());
   const parsed = serviceSchema.safeParse(raw);
 
@@ -67,7 +67,7 @@ export async function saveServiceAction(_prevState: ServiceFormState, formData: 
 }
 
 export async function deleteServiceAction(id: string): Promise<void> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   await deleteService(id);
   revalidatePath("/admin/services");
 }

@@ -10,7 +10,7 @@ import { BookingSettingsForm } from "./BookingSettingsForm";
 import { PropertyContactForm } from "./PropertyContactForm";
 
 export default async function AdminSettingsPage() {
-  await requireAdminRole("owner", "manager");
+  await requireAdminRole("HOTEL_ADMIN");
   const { dict } = await getServerDictionary();
   const [flags, bookingSettings, propertyContact] = await Promise.all([
     getModuleFlags(),

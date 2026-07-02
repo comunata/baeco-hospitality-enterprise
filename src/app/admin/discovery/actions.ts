@@ -47,7 +47,7 @@ export interface ProfileFormState {
 }
 
 export async function savePropertyAction(_prev: ProfileFormState, formData: FormData): Promise<ProfileFormState> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   const parsed = profileSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
@@ -109,7 +109,7 @@ export interface ScanFormState {
 }
 
 export async function runScanAction(_prev: ScanFormState, formData: FormData): Promise<ScanFormState> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
 
   const radiusRaw = Number(formData.get("radiusKm"));
   const radiusKm = (RADIUS_OPTIONS_KM as readonly number[]).includes(radiusRaw) ? radiusRaw : 25;
@@ -146,37 +146,37 @@ export async function runScanAction(_prev: ScanFormState, formData: FormData): P
 // ---------------------------------------------------------------------------
 
 export async function approvePlaceAction(id: string): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   await setPlaceStatus(id, "approved");
   revalidateAll();
 }
 
 export async function rejectPlaceAction(id: string): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   await setPlaceStatus(id, "rejected");
   revalidateAll();
 }
 
 export async function restorePlaceAction(id: string): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   await setPlaceStatus(id, "pending");
   revalidateAll();
 }
 
 export async function togglePinAction(id: string, pinned: boolean): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   await setPlacePinned(id, pinned);
   revalidateAll();
 }
 
 export async function deletePlaceAction(id: string): Promise<void> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   await deletePlace(id);
   revalidateAll();
 }
 
 export async function approveCategoryAction(category: BdCategory): Promise<void> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   const pending = await listPlaces({ status: "pending", category });
   await setPlacesStatusBulk(pending.map((p) => p.id), "approved");
   revalidateAll();
@@ -191,7 +191,7 @@ const editSchema = z.object({
 });
 
 export async function editPlaceAction(formData: FormData): Promise<void> {
-  await assertAdminRole("owner", "manager", "staff");
+  await assertAdminRole("HOTEL_ADMIN");
   const parsed = editSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return;
   const { id, name, descriptionRo, descriptionEn, image } = parsed.data;

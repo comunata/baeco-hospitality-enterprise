@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen bg-midnight text-ivory">
-      <AdminSidebar dict={dict} />
+      <AdminSidebar dict={dict} role={session.role} />
       <div className="flex-1">
         <AdminHeader locale={locale} session={session} dict={dict} />
         <main className="p-6 md:p-10">{children}</main>

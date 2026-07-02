@@ -27,7 +27,7 @@ function linesToArray(value?: string): string[] {
 }
 
 export async function savePageAction(_prevState: PageFormState, formData: FormData): Promise<PageFormState> {
-  await assertAdminRole("owner", "manager");
+  await assertAdminRole("HOTEL_ADMIN");
   const raw = Object.fromEntries(formData.entries());
   const parsed = pageSchema.safeParse(raw);
   if (!parsed.success) {
