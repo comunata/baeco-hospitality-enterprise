@@ -75,6 +75,8 @@ const en: Dictionary = {
     rights: "All rights reserved.",
     checkIn: "Check-in",
     checkOut: "Check-out",
+    callNow: "Call now",
+    whatsapp: "WhatsApp",
   },
   home: {
     heroTitle: "A luxury experience, built for you",

@@ -4,6 +4,7 @@ import type { Dictionary } from "@/lib/i18n";
 import { Container } from "@/components/ui/Container";
 import { getPropertyContactInfo } from "@/lib/data/property";
 import { AdminAccessIcon } from "./AdminAccessIcon";
+import { FooterContactButtons } from "./FooterContactButtons";
 
 export async function Footer({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const contact = await getPropertyContactInfo();
@@ -44,7 +45,6 @@ export async function Footer({ locale, dict }: { locale: Locale; dict: Dictionar
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-champagne">{dict.footer.contact}</p>
           <ul className="mt-4 space-y-3 text-sm text-stone">
             <li>{contact.address}</li>
-            <li>{contact.phone}</li>
             <li>{contact.email}</li>
             <li>
               {dict.footer.checkIn} {contact.checkIn} · {dict.footer.checkOut} {contact.checkOut}
@@ -67,6 +67,12 @@ export async function Footer({ locale, dict }: { locale: Locale; dict: Dictionar
           )}
         </div>
       </Container>
+
+      <div className="border-t border-platinum/10 py-10">
+        <Container>
+          <FooterContactButtons dict={{ call: dict.footer.callNow, whatsapp: dict.footer.whatsapp }} />
+        </Container>
+      </div>
 
       <div className="border-t border-platinum/10 py-6">
         <Container className="flex flex-col items-center justify-between gap-3 text-xs text-stone md:flex-row">

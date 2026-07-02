@@ -73,6 +73,8 @@ const ro = {
     rights: "Toate drepturile rezervate.",
     checkIn: "Check-in",
     checkOut: "Check-out",
+    callNow: "Sună acum",
+    whatsapp: "WhatsApp",
   },
   home: {
     heroTitle: "O experiență de lux, construită pentru tine",
