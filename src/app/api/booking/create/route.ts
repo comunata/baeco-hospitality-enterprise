@@ -6,8 +6,9 @@ import { getSeasons, getRoomRateOverrides } from "@/lib/data/seasons";
 import { getPromotionByCode, getVoucherByCode, validatePromotionForStay } from "@/lib/data/promotions";
 import { getBookingSettings } from "@/lib/data/settings";
 import { calculateBookingPrice, eachNight } from "@/lib/pricing";
-import { createBooking, generateBookingCode, getAvailableUnits } from "@/lib/data/bookings";
+import { createBooking, generateUniqueBookingCode, getAvailableUnits } from "@/lib/data/bookings";
 import { sendEmail } from "@/lib/integrations/email";
+import { renderBookingEmailHtml } from "@/lib/integrations/emailTemplates";
 import { buildWhatsappLink, sendWhatsappTemplate } from "@/lib/integrations/whatsapp";
 import { getPropertyContactInfo } from "@/lib/data/property";
 import { getDictionary } from "@/lib/i18n";
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
 
   // Price every room; promo/voucher apply once, to the first room only —
   // never multiplied across the rooms of one group reservation.
-  const groupCode = generateBookingCode();
+  const groupCode = await generateUniqueBookingCode();
   const bookings: Booking[] = [];
   try {
     for (const [index, { request: req, room }] of resolved.entries()) {
@@ -152,7 +153,13 @@ export async function POST(request: NextRequest) {
       });
       bookings.push({
         id: crypto.randomUUID(),
-        code: resolved.length === 1 ? groupCode : generateBookingCode(),
+        // The primary room (index 0) always gets groupCode as its own code —
+        // for a single-room booking that's the only code; for a multi-room
+        // one it means groupCode is a real, directly-lookupable booking
+        // code (not just a label), so the portal/email "view booking" link
+        // and login always resolve to a real row without a separate
+        // group-code lookup path.
+        code: index === 0 ? groupCode : await generateUniqueBookingCode(),
         roomId: room.id,
         checkIn: input.checkIn,
         checkOut: input.checkOut,
@@ -182,13 +189,11 @@ export async function POST(request: NextRequest) {
   const grandTotal = created.reduce((sum, b) => sum + b.totals.total, 0);
   const currency = created[0].totals.currency;
 
-  const roomLines = created
-    .map((b) => {
-      const room = resolved.find((r) => r.room.id === b.roomId)?.room;
-      const roomName = room ? room.name[locale] ?? room.name.en : b.roomId;
-      return `<li>${roomName} — ${b.code} — ${formatCurrency(b.totals.total, currency)}</li>`;
-    })
-    .join("");
+  const roomDetailRows = created.map((b) => {
+    const room = resolved.find((r) => r.room.id === b.roomId)?.room;
+    const roomName = room ? room.name[locale] ?? room.name.en : b.roomId;
+    return { label: roomName, value: `${b.code} · ${formatCurrency(b.totals.total, currency)}` };
+  });
 
   const primaryRoom = resolved[0].room;
   const contact = await getPropertyContactInfo();
@@ -200,6 +205,7 @@ export async function POST(request: NextRequest) {
     checkOut: formatDate(input.checkOut, locale === "ro" ? "ro-RO" : "en-GB"),
   };
   const notificationVars = { ...emailVars, bookingCode: groupCode };
+  const portalUrl = `${siteConfig.domain}/portal/bookings/${groupCode}`;
 
   // Two distinct audiences, two distinct templates — never swapped:
   // - guestConfirmationTemplate: 2nd person ("your booking"), sent to the
@@ -218,12 +224,21 @@ export async function POST(request: NextRequest) {
     const result = await sendEmail({
       to: input.guest.email,
       subject: renderTemplate(guestConfirmationTemplate.subject, emailVars),
-      html:
-        `<h1>${renderTemplate(guestConfirmationTemplate.heading, emailVars)}</h1>` +
-        `<p>${renderTemplate(guestConfirmationTemplate.body, emailVars)}</p>` +
-        `<ul>${roomLines}</ul>` +
-        `<p><strong>Total: ${formatCurrency(grandTotal, currency)}</strong></p>` +
-        `<p>${dict.booking.summary}: ${groupCode}</p>`,
+      html: renderBookingEmailHtml({
+        propertyName: siteConfig.name,
+        title: renderTemplate(guestConfirmationTemplate.heading, emailVars),
+        intro: renderTemplate(guestConfirmationTemplate.body, emailVars),
+        bookingCode: groupCode,
+        rows: [
+          { label: dict.bookingWidget.checkIn, value: emailVars.checkIn },
+          { label: dict.bookingWidget.checkOut, value: emailVars.checkOut },
+          ...roomDetailRows,
+        ],
+        total: formatCurrency(grandTotal, currency),
+        ctaLabel: dict.emails.viewBooking,
+        ctaUrl: portalUrl,
+        footerNote: `${contact.name} · ${contact.address} · ${contact.phone}`,
+      }),
     });
     if (!result.sent) console.error(`[booking:${groupCode}] guest confirmation email not sent (provider=${result.provider}) to=${input.guest.email}`);
   } catch (err) {
@@ -245,11 +260,18 @@ export async function POST(request: NextRequest) {
     const result = await sendEmail({
       to: contact.email,
       subject: renderTemplate(propertyNotificationTemplate.subject, notificationVars),
-      html:
-        `<h1>${renderTemplate(propertyNotificationTemplate.heading, notificationVars)}</h1>` +
-        `<p>${renderTemplate(propertyNotificationTemplate.body, notificationVars)}</p>` +
-        `<ul>${roomLines}</ul>` +
-        `<p><strong>Total: ${formatCurrency(grandTotal, currency)}</strong></p>`,
+      html: renderBookingEmailHtml({
+        propertyName: siteConfig.name,
+        title: renderTemplate(propertyNotificationTemplate.heading, notificationVars),
+        intro: renderTemplate(propertyNotificationTemplate.body, notificationVars),
+        bookingCode: groupCode,
+        rows: [
+          { label: dict.bookingWidget.checkIn, value: emailVars.checkIn },
+          { label: dict.bookingWidget.checkOut, value: emailVars.checkOut },
+          ...roomDetailRows,
+        ],
+        total: formatCurrency(grandTotal, currency),
+      }),
     });
     if (!result.sent) console.error(`[booking:${groupCode}] property notification email not sent (provider=${result.provider}) to=${contact.email}`);
   } catch (err) {

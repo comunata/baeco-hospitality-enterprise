@@ -118,18 +118,44 @@ function patchToRow(patch: Partial<Booking>): Record<string, unknown> {
 /**
  * Booking codes are guessable/enumerable identifiers used to look up and
  * (via the portal) cancel/edit reservations, so they must not be predictable.
- * Math.random() is not a CSPRNG; crypto.randomBytes is, and this produces a
- * longer, base32-ish code with no ambiguous characters (0/O, 1/I removed).
+ * Math.random() is not a CSPRNG; crypto.randomBytes is. No ambiguous
+ * characters (0/O, 1/I removed) so codes stay easy to read/type over phone.
+ *
+ * Format: BD-XXXXXX (6 chars, 33^6 ≈ 1.29 billion combinations — collisions
+ * are checked against the DB/memory store below and retried, never left to
+ * chance). The code is assigned once at booking creation and never changes.
  */
 const BOOKING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const BOOKING_CODE_LENGTH = 6;
 
 export function generateBookingCode(): string {
-  const bytes = randomBytes(10);
+  const bytes = randomBytes(BOOKING_CODE_LENGTH);
   let code = "";
   for (const byte of bytes) {
     code += BOOKING_CODE_ALPHABET[byte % BOOKING_CODE_ALPHABET.length];
   }
-  return `BH-${code}`;
+  return `BD-${code}`;
+}
+
+async function bookingCodeExists(code: string): Promise<boolean> {
+  if (isSupabaseConfigured()) {
+    const admin = createAdminClient();
+    if (admin) {
+      const { data } = await admin.from("bookings").select("id").or(`code.eq.${code},group_code.eq.${code}`).limit(1).maybeSingle();
+      return Boolean(data);
+    }
+  }
+  return memoryBookings.some((b) => b.code === code || b.groupCode === code);
+}
+
+/** Generates a booking code and retries on the (astronomically unlikely)
+ * chance of a collision with an existing booking or group code. */
+export async function generateUniqueBookingCode(): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateBookingCode();
+    if (!(await bookingCodeExists(code))) return code;
+  }
+  throw new Error("Nu s-a putut genera un cod de rezervare unic. Încearcă din nou.");
 }
 
 export async function createBooking(booking: Booking): Promise<Booking> {
@@ -224,8 +250,14 @@ export async function getAllBookings(): Promise<Booking[]> {
 }
 
 export async function getBookingByCode(code: string): Promise<Booking | undefined> {
-  const bookings = await getAllBookings();
-  return bookings.find((b) => b.code === code);
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient();
+    if (supabase) {
+      const { data, error } = await supabase.from("bookings").select("*").eq("code", code).maybeSingle();
+      if (!error) return data ? fromRow(data as BookingRow) : undefined;
+    }
+  }
+  return memoryBookings.find((b) => b.code === code);
 }
 
 /** All rooms of one multi-room reservation (or the single booking itself). */

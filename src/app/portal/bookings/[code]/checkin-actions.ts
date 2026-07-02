@@ -19,14 +19,14 @@ export interface CheckInFormState {
 /** Online check-in: only the authenticated guest owning the booking. */
 export async function onlineCheckInAction(_prev: CheckInFormState, formData: FormData): Promise<CheckInFormState> {
   const session = await getPortalSession();
-  if (!session.authenticated || !session.email) return { error: "unauthorized" };
+  if (!session.authenticated || !session.bookingCode) return { error: "unauthorized" };
 
   const parsed = checkInSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { error: "Completează ora estimată a sosirii." };
   const { code, arrivalTime, notes } = parsed.data;
 
   const booking = await getBookingByCode(code);
-  if (!booking || booking.guest.email.toLowerCase() !== session.email.toLowerCase()) return { error: "unauthorized" };
+  if (!booking || booking.code !== session.bookingCode) return { error: "unauthorized" };
   if (booking.status === "cancelled") return { error: "Rezervarea este anulată." };
   if (booking.checkedInAt) return { done: true };
 

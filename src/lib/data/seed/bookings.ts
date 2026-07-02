@@ -10,7 +10,7 @@ const iso = (offsetDays: number) => {
 export const seedBookings: Booking[] = [
   {
     id: "seed-booking-1",
-    code: "BH-DEMO01",
+    code: "BD-DEMO01",
     roomId: "room-deluxe-garden",
     checkIn: iso(0),
     checkOut: iso(3),
@@ -24,7 +24,7 @@ export const seedBookings: Booking[] = [
   },
   {
     id: "seed-booking-2",
-    code: "BH-DEMO02",
+    code: "BD-DEMO02",
     roomId: "room-executive-suite",
     checkIn: iso(1),
     checkOut: iso(4),
@@ -38,7 +38,7 @@ export const seedBookings: Booking[] = [
   },
   {
     id: "seed-booking-3",
-    code: "BH-DEMO03",
+    code: "BD-DEMO03",
     roomId: "room-family-apartment",
     checkIn: iso(6),
     checkOut: iso(9),

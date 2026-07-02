@@ -25,17 +25,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const booking = await getBookingByCode(code);
   if (!booking) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  // Authorization: the caller must be an authenticated portal session whose
-  // email matches the booking's guest email. This closes an IDOR where any
-  // caller could PATCH (cancel / edit special requests on) any booking code,
-  // since the code alone is guessable/enumerable and this route used to
-  // trust it as sufficient proof of ownership.
+  // Authorization: the caller must hold a portal session scoped to this
+  // exact booking code (see lib/portal/session.ts) — closes an IDOR where
+  // any caller could PATCH (cancel / edit special requests on) any booking
+  // code, since the code alone is guessable/enumerable.
   const session = await getPortalSession();
-  if (!session.authenticated) {
+  if (!session.authenticated || session.bookingCode !== booking.code) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-  if (session.email.toLowerCase() !== booking.guest.email.toLowerCase()) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);
