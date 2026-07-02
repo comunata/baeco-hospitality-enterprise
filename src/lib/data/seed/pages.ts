@@ -16,11 +16,9 @@ const restaurantImages = [
   "/images/restaurant/fd812639e4dbbf241af4762c4c13857d.jpg",
 ];
 
-// No dedicated spa/pool photoshoot exists among the delivered images;
-// reuse the hero infinity-pool villa image, which is the closest visual match.
 const spaPoolImages = [
-  "/images/hero/8d593cacba16e0d6d2ae6e7108793c28.jpg",
-  "/images/hero/b598dedbd81e9a4aa89d632f77b96418.jpg",
+  "/images/wellness/pool.webp",
+  "/images/wellness/pool-terrace-sunset.webp",
 ];
 
 const facilitiesImages = [
