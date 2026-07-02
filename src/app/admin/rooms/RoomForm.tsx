@@ -3,15 +3,18 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { saveRoomAction, type RoomFormState } from "./actions";
+import { MediaManager } from "@/components/admin/media/MediaManager";
+import type { MediaItem } from "@/lib/data/media";
 import type { Room } from "@/lib/types";
 
 const initialState: RoomFormState = {};
 
-export function RoomForm({ room }: { room?: Room }) {
+export function RoomForm({ room, mediaImages }: { room?: Room; mediaImages?: MediaItem[] }) {
   const [state, formAction, pending] = useActionState(saveRoomAction, initialState);
 
   return (
-    <form action={formAction} className="max-w-3xl space-y-8">
+    <div className="max-w-3xl space-y-8">
+      <form action={formAction} className="space-y-8">
       {room?.id && <input type="hidden" name="id" value={room.id} />}
 
       {state.error && (
@@ -51,10 +54,8 @@ export function RoomForm({ room }: { room?: Room }) {
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="mb-2 text-[11px] font-medium uppercase tracking-[0.2em] text-stone">Galerie foto</legend>
-        <TextArea label="URL-uri imagini (câte o linie, prima devine imaginea principală dacă nu setezi una separat)" name="gallery" defaultValue={room?.gallery.join("\n")} placeholder={"https://.../foto1.jpg\nhttps://.../foto2.jpg"} />
-        <Field label="Imagine principală (cover, opțional)" name="coverImage" defaultValue={room?.coverImage} />
-        <Field label="URL tur virtual (opțional)" name="virtualTourUrl" defaultValue={room?.virtualTourUrl} />
+        <legend className="mb-2 text-[11px] font-medium uppercase tracking-[0.2em] text-stone">Tur virtual</legend>
+        <Field label="URL tur virtual (opțional, link extern)" name="virtualTourUrl" defaultValue={room?.virtualTourUrl} />
       </fieldset>
 
       <fieldset className="space-y-4">
@@ -83,6 +84,14 @@ export function RoomForm({ room }: { room?: Room }) {
         </Link>
       </div>
     </form>
+
+      {room?.id && (
+        <div className="space-y-4 border-t border-platinum/10 pt-8">
+          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-stone">Imagini cameră</p>
+          <MediaManager ownerType="room" ownerId={room.id} initialImages={mediaImages ?? []} />
+        </div>
+      )}
+    </div>
   );
 }
 

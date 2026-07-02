@@ -1,4 +1,7 @@
 import "server-only";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -96,7 +99,7 @@ export async function getRooms(): Promise<Room[]> {
       // instead of crashing the request.
     }
   }
-  return seedRooms.filter((r) => r.active);
+  return readDevStore().filter((r) => r.active);
 }
 
 /** Admin listing: includes inactive rooms too. */
@@ -112,7 +115,7 @@ export async function getAllRoomsAdmin(): Promise<Room[]> {
       // fall through to memory
     }
   }
-  return memoryRooms;
+  return readDevStore();
 }
 
 export async function getRoomById(id: string): Promise<Room | undefined> {
@@ -126,11 +129,28 @@ export async function getRoomBySlug(slug: string): Promise<Room | undefined> {
 }
 
 /**
- * In-memory fallback store, mirrors the pattern used in lib/data/bookings.ts,
- * so admin CRUD is testable end-to-end even without Supabase configured.
- * Resets on server restart.
+ * Dev-only fallback store, file-backed rather than a plain module variable —
+ * Next's dev server compiles Route Handlers and Server Components/Actions
+ * as separate module graphs that don't reliably share module state, so a
+ * room updated from a Route Handler (e.g. the media upload endpoint syncing
+ * gallery/coverImage back via updateRoom) could otherwise go invisible to
+ * page renders reading through a different bundle. Same pattern as
+ * lib/data/media.ts's DEV_STORE_PATH. Never used once Supabase is
+ * configured. Resets on server restart / tmpdir cleanup.
  */
-const memoryRooms: Room[] = [...seedRooms];
+const DEV_STORE_PATH = path.join(os.tmpdir(), "baeco-rooms-dev-store.json");
+
+function readDevStore(): Room[] {
+  try {
+    return JSON.parse(fs.readFileSync(DEV_STORE_PATH, "utf-8"));
+  } catch {
+    return [...seedRooms];
+  }
+}
+
+function writeDevStore(rooms: Room[]): void {
+  fs.writeFileSync(DEV_STORE_PATH, JSON.stringify(rooms));
+}
 
 /**
  * NOTE on RLS: admin mutations use the service-role client (createAdminClient)
@@ -150,7 +170,9 @@ export async function createRoom(room: Room): Promise<Room> {
       if (error) throw new Error(error.message);
     }
   }
-  memoryRooms.push(room);
+  const rooms = readDevStore();
+  rooms.push(room);
+  writeDevStore(rooms);
   return room;
 }
 
@@ -164,7 +186,7 @@ export async function createRoom(room: Room): Promise<Room> {
  */
 export async function resolveRoomUuid(admin: NonNullable<ReturnType<typeof createAdminClient>>, id: string): Promise<string | null> {
   if (isUuid(id)) return id;
-  const slug = seedRooms.find((r) => r.id === id)?.slug ?? memoryRooms.find((r) => r.id === id)?.slug;
+  const slug = seedRooms.find((r) => r.id === id)?.slug ?? readDevStore().find((r) => r.id === id)?.slug;
   if (!slug) return null;
   const { data, error } = await admin.from("rooms").select("id").eq("slug", slug).maybeSingle();
   if (error || !data) return null;
@@ -183,7 +205,7 @@ export async function updateRoom(id: string, patch: Partial<Room>): Promise<Room
       } else {
         // No row has ever been persisted for this (seed-only) room —
         // editing it is its first real save, so insert instead of update.
-        const base = seedRooms.find((r) => r.id === id) ?? memoryRooms.find((r) => r.id === id);
+        const base = seedRooms.find((r) => r.id === id) ?? readDevStore().find((r) => r.id === id);
         if (!base) return undefined;
         const merged: Room = { ...base, ...patch };
         const { data, error } = await admin.from("rooms").insert(toRow(merged)).select().single();
@@ -192,8 +214,12 @@ export async function updateRoom(id: string, patch: Partial<Room>): Promise<Room
       }
     }
   }
-  const room = memoryRooms.find((r) => r.id === id);
-  if (room) Object.assign(room, patch);
+  const rooms = readDevStore();
+  const room = rooms.find((r) => r.id === id);
+  if (room) {
+    Object.assign(room, patch);
+    writeDevStore(rooms);
+  }
   return room;
 }
 

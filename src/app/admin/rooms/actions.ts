@@ -22,8 +22,6 @@ const roomSchema = z.object({
   totalUnits: z.coerce.number().int().min(1).default(1),
   beds: z.string().optional(),
   amenities: z.string().optional(),
-  gallery: z.string().optional(),
-  coverImage: z.string().optional(),
   virtualTourUrl: z.string().optional(),
   rulesRo: z.string().optional(),
   rulesEn: z.string().optional(),
@@ -59,12 +57,15 @@ export async function saveRoomAction(_prevState: RoomFormState, formData: FormDa
   const data = parsed.data;
   const slug = data.slug?.trim() ? slugify(data.slug) : slugify(data.nameRo);
 
-  const roomData: Omit<Room, "id"> = {
+  // gallery/coverImage are intentionally absent here — they're owned by
+  // the Imagini cameră MediaManager (see lib/data/media.ts's
+  // syncLegacyOwner), which writes them directly via updateRoom whenever
+  // images are uploaded/reordered/deleted. Including them in this patch
+  // would overwrite that on every unrelated field edit (name, price...).
+  const roomData: Omit<Room, "id" | "gallery" | "coverImage"> = {
     slug,
     name: { ro: data.nameRo, en: data.nameEn?.trim() || data.nameRo },
     description: { ro: data.descriptionRo ?? "", en: data.descriptionEn?.trim() || data.descriptionRo || "" },
-    gallery: linesToArray(data.gallery),
-    coverImage: data.coverImage?.trim() || linesToArray(data.gallery)[0] || "",
     maxAdults: data.maxAdults,
     maxChildren: data.maxChildren,
     sizeSqm: data.sizeSqm,
@@ -79,6 +80,7 @@ export async function saveRoomAction(_prevState: RoomFormState, formData: FormDa
     totalUnits: data.totalUnits,
   };
 
+  let redirectTo = "/admin/rooms";
   try {
     if (data.id) {
       const existing = await getRoomById(data.id);
@@ -88,14 +90,18 @@ export async function saveRoomAction(_prevState: RoomFormState, formData: FormDa
         extraServiceIds: existing?.extraServiceIds ?? [],
       });
     } else {
-      await createRoom({ id: `room-${slug}-${Date.now().toString(36)}`, ...roomData });
+      // New rooms have no images yet — created with an empty gallery/
+      // coverImage, then sent straight to the edit page so the admin can
+      // upload photos immediately via the MediaManager.
+      const created = await createRoom({ id: `room-${slug}-${Date.now().toString(36)}`, gallery: [], coverImage: "", ...roomData });
+      redirectTo = `/admin/rooms/${created.id}/edit`;
     }
   } catch (err) {
     return { error: err instanceof Error ? err.message : "A apărut o eroare la salvare." };
   }
 
   revalidatePath("/admin/rooms");
-  redirect("/admin/rooms");
+  redirect(redirectTo);
 }
 
 export async function deleteRoomAction(id: string): Promise<void> {

@@ -3,8 +3,8 @@
 import { useRef, useState, useTransition, type DragEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import type { GalleryImage } from "@/lib/data/gallery";
-import { setPrimaryImageAction, reorderImagesAction, deleteImageAction, updateImageMetaAction } from "./actions";
+import type { MediaItem, MediaOwnerType } from "@/lib/data/media";
+import { setPrimaryMediaAction, reorderMediaAction, deleteMediaAction, updateMediaMetaAction } from "./actions";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_FILE_MB = 8;
@@ -14,7 +14,24 @@ function formatSize(bytes: number | null): string {
   return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`;
 }
 
-export function GalleryManager({ initialImages }: { initialImages: GalleryImage[] }) {
+/**
+ * Reusable image manager: drag&drop/click upload (multi-file, auto WebP
+ * conversion server-side), thumbnail grid with native drag-reorder, a
+ * primary-image toggle, and a detail panel for title/ALT text (RO+EN) +
+ * delete-with-confirm. Used by both the site Gallery (ownerType="gallery")
+ * and per-room image sets (ownerType="room", ownerId=room.id) — the only
+ * thing that differs between owners is which record their uploads/edits
+ * attach to and which public page gets revalidated (see ./actions.ts).
+ */
+export function MediaManager({
+  ownerType,
+  ownerId = null,
+  initialImages,
+}: {
+  ownerType: MediaOwnerType;
+  ownerId?: string | null;
+  initialImages: MediaItem[];
+}) {
   const router = useRouter();
   const [images, setImages] = useState(initialImages);
   // Re-sync local (optimistic-reorder) state when the server gives us a
@@ -63,8 +80,10 @@ export function GalleryManager({ initialImages }: { initialImages: GalleryImage[
     setUploading(true);
     try {
       const formData = new FormData();
+      formData.append("ownerType", ownerType);
+      if (ownerId) formData.append("ownerId", ownerId);
       valid.forEach((file) => formData.append("files", file));
-      const res = await fetch("/api/admin/gallery/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/admin/media/upload", { method: "POST", body: formData });
       const data = await res.json().catch(() => ({ created: [], errors: [{ name: "?", error: "Răspuns invalid de la server." }] }));
       if (data.errors?.length) setUploadErrors((prev) => [...prev, ...data.errors]);
       router.refresh();
@@ -102,14 +121,14 @@ export function GalleryManager({ initialImages }: { initialImages: GalleryImage[
     setImages(current);
     setDragImageId(null);
     startTransition(() => {
-      reorderImagesAction(current.map((img) => img.id)).then(() => router.refresh());
+      reorderMediaAction(ownerType, ownerId, current.map((img) => img.id)).then(() => router.refresh());
     });
   }
 
   function handleSetPrimary(id: string) {
     setImages((prev) => prev.map((img) => ({ ...img, isPrimary: img.id === id })));
     startTransition(() => {
-      setPrimaryImageAction(id).then(() => router.refresh());
+      setPrimaryMediaAction(ownerType, ownerId, id).then(() => router.refresh());
     });
   }
 
@@ -121,7 +140,7 @@ export function GalleryManager({ initialImages }: { initialImages: GalleryImage[
     setImages((prev) => prev.filter((img) => img.id !== id));
     if (selectedId === id) setSelectedId(null);
     startTransition(() => {
-      deleteImageAction(id).then(() => router.refresh());
+      deleteMediaAction(ownerType, ownerId, id).then(() => router.refresh());
     });
   }
 
@@ -169,7 +188,7 @@ export function GalleryManager({ initialImages }: { initialImages: GalleryImage[
       )}
 
       {images.length === 0 ? (
-        <p className="text-sm text-stone">Nicio imagine în galerie încă. Adaugă prima imagine mai sus.</p>
+        <p className="text-sm text-stone">Nicio imagine încă. Adaugă prima imagine mai sus.</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {images.map((image) => (
@@ -185,7 +204,7 @@ export function GalleryManager({ initialImages }: { initialImages: GalleryImage[
               } ${dragImageId === image.id ? "opacity-40" : ""}`}
             >
               <div className="relative aspect-square">
-                <Image src={image.url} alt={image.alt.ro || image.alt.en || "Imagine galerie"} fill sizes="25vw" className="object-cover" />
+                <Image src={image.url} alt={image.alt.ro || image.alt.en || "Imagine"} fill sizes="25vw" className="object-cover" />
               </div>
               {image.isPrimary && (
                 <span className="absolute left-2 top-2 rounded-full bg-champagne px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-midnight">
@@ -223,6 +242,8 @@ export function GalleryManager({ initialImages }: { initialImages: GalleryImage[
         <ImageEditorPanel
           key={selected.id}
           image={selected}
+          ownerType={ownerType}
+          ownerId={ownerId}
           pending={pending}
           onClose={() => setSelectedId(null)}
           onSetPrimary={() => handleSetPrimary(selected.id)}
@@ -236,13 +257,17 @@ export function GalleryManager({ initialImages }: { initialImages: GalleryImage[
 
 function ImageEditorPanel({
   image,
+  ownerType,
+  ownerId,
   pending,
   onClose,
   onSetPrimary,
   onDelete,
   onSaved,
 }: {
-  image: GalleryImage;
+  image: MediaItem;
+  ownerType: MediaOwnerType;
+  ownerId: string | null;
   pending: boolean;
   onClose: () => void;
   onSetPrimary: () => void;
@@ -255,7 +280,7 @@ function ImageEditorPanel({
   async function handleSave(formData: FormData) {
     setSaving(true);
     setError(null);
-    const result = await updateImageMetaAction({}, formData);
+    const result = await updateMediaMetaAction({}, formData);
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -275,12 +300,14 @@ function ImageEditorPanel({
 
       <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
         <div className="relative aspect-square overflow-hidden rounded-sm border border-platinum/10">
-          <Image src={image.url} alt={image.alt.ro || image.alt.en || "Imagine galerie"} fill sizes="220px" className="object-cover" />
+          <Image src={image.url} alt={image.alt.ro || image.alt.en || "Imagine"} fill sizes="220px" className="object-cover" />
         </div>
 
         <div className="space-y-4">
           <form action={handleSave} className="space-y-4">
             <input type="hidden" name="id" value={image.id} />
+            <input type="hidden" name="ownerType" value={ownerType} />
+            {ownerId && <input type="hidden" name="ownerId" value={ownerId} />}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <TextField label="Titlu (RO)" name="titleRo" defaultValue={image.title.ro} />
               <TextField label="Titlu (EN)" name="titleEn" defaultValue={image.title.en} />

@@ -1,10 +1,35 @@
 import "server-only";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { seedPages, type PageContent } from "./seed/pages";
 
-const memoryPages: Record<string, PageContent> = { ...seedPages };
+/**
+ * Dev-only fallback store, file-backed (not a plain module variable) for
+ * the same reason as lib/data/media.ts's DEV_STORE_PATH: Next's dev server
+ * compiles Route Handlers and Server Components/Actions as separate module
+ * graphs that don't reliably share a plain `let`/`const` module variable,
+ * so a page updated via a Route Handler (e.g. the media upload endpoint
+ * syncing gallery back into this page's `gallery` field) could otherwise
+ * go invisible to Server Component reads. Never used once Supabase is
+ * configured. Resets on server restart / tmpdir cleanup.
+ */
+const DEV_STORE_PATH = path.join(os.tmpdir(), "baeco-pages-dev-store.json");
+
+function readDevStore(): Record<string, PageContent> {
+  try {
+    return JSON.parse(fs.readFileSync(DEV_STORE_PATH, "utf-8"));
+  } catch {
+    return { ...seedPages };
+  }
+}
+
+function writeDevStore(pages: Record<string, PageContent>): void {
+  fs.writeFileSync(DEV_STORE_PATH, JSON.stringify(pages));
+}
 
 export async function getPage(slug: string): Promise<PageContent | undefined> {
   if (isSupabaseConfigured()) {
@@ -14,7 +39,7 @@ export async function getPage(slug: string): Promise<PageContent | undefined> {
       if (!error && data) return data as unknown as PageContent;
     }
   }
-  return memoryPages[slug];
+  return readDevStore()[slug];
 }
 
 export async function getAllPages(): Promise<PageContent[]> {
@@ -25,7 +50,7 @@ export async function getAllPages(): Promise<PageContent[]> {
       if (!error && data && data.length > 0) return data as unknown as PageContent[];
     }
   }
-  return Object.values(memoryPages);
+  return Object.values(readDevStore());
 }
 
 // See note in lib/data/rooms.ts about using the service-role client for
@@ -39,6 +64,8 @@ export async function upsertPage(page: PageContent): Promise<PageContent> {
       if (error) throw new Error(error.message);
     }
   }
-  memoryPages[page.slug] = page;
+  const pages = readDevStore();
+  pages[page.slug] = page;
+  writeDevStore(pages);
   return page;
 }
