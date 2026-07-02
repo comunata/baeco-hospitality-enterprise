@@ -4,10 +4,12 @@ import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   createUserAction,
+  relinkUserProfileAction,
   toggleUserActiveAction,
   changeUserRoleAction,
   resetPasswordAction,
   type CreateUserState,
+  type RelinkUserState,
   type ResetPasswordState,
 } from "@/app/admin/users/actions";
 import type { AdminUser } from "@/lib/data/users";
@@ -93,6 +95,47 @@ function CreateUserForm() {
           <p className="mt-2 rounded-sm border border-platinum/15 bg-midnight px-3 py-2 font-mono text-champagne">{state.createdPassword}</p>
         </div>
       )}
+      {state.needsRelink && <RelinkPanel info={state.needsRelink} />}
+    </div>
+  );
+}
+
+/** Shown when the email typed into "Cont nou" already has a Supabase Auth
+ * account but no public.users profile — offers to link them together
+ * instead of just saying "already exists" and leaving the account
+ * unrecoverable from the admin UI. */
+function RelinkPanel({ info }: { info: NonNullable<CreateUserState["needsRelink"]> }) {
+  const initial: RelinkUserState = {};
+  const [state, formAction, pending] = useActionState(relinkUserProfileAction, initial);
+
+  if (state.linked) {
+    return (
+      <div className="mt-4 rounded-sm border border-emerald/30 bg-emerald/5 px-4 py-3 text-sm text-emerald">
+        Profilul a fost asociat contului existent pentru <strong>{info.email}</strong>.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-sm border border-amber-400/30 bg-amber-400/5 px-4 py-3 text-sm">
+      <p className="text-amber-200">
+        Există deja un cont de autentificare pentru <strong>{info.email}</strong>, dar fără profil în aplicație (probabil dintr-o
+        încercare anterioară nefinalizată). Poți asocia acest cont existent cu rolul ales, în loc să creezi unul nou.
+      </p>
+      <form action={formAction} className="mt-3">
+        <input type="hidden" name="authUserId" value={info.authUserId} />
+        <input type="hidden" name="email" value={info.email} />
+        <input type="hidden" name="fullName" value={info.fullName} />
+        <input type="hidden" name="role" value={info.role} />
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-sm border border-amber-400/40 px-4 py-2 text-xs font-medium uppercase tracking-widest text-amber-200 hover:bg-amber-400/10 disabled:opacity-50"
+        >
+          {pending ? "Se asociază…" : "Asociază acest cont existent"}
+        </button>
+      </form>
+      {state.error && <p className="mt-2 text-xs text-red-300">{state.error}</p>}
     </div>
   );
 }
@@ -101,17 +144,22 @@ function UserRow({ user }: { user: AdminUser }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [showReset, setShowReset] = useState(false);
+  const [rowError, setRowError] = useState<string | null>(null);
 
   function toggleActive() {
+    setRowError(null);
     startTransition(async () => {
-      await toggleUserActiveAction(user.id, !user.active);
+      const result = await toggleUserActiveAction(user.id, !user.active);
+      if (result.error) setRowError(result.error);
       router.refresh();
     });
   }
 
   function changeRole(role: string) {
+    setRowError(null);
     startTransition(async () => {
-      await changeUserRoleAction(user.id, role);
+      const result = await changeUserRoleAction(user.id, role);
+      if (result.error) setRowError(result.error);
       router.refresh();
     });
   }
@@ -156,6 +204,13 @@ function UserRow({ user }: { user: AdminUser }) {
           </div>
         </td>
       </tr>
+      {rowError && (
+        <tr className="border-b border-platinum/5 bg-red-400/5">
+          <td colSpan={6} className="px-4 py-2 text-xs text-red-300">
+            {rowError}
+          </td>
+        </tr>
+      )}
       {showReset && (
         <tr className="border-b border-platinum/5 bg-midnight/40">
           <td colSpan={6} className="px-4 py-3">
