@@ -106,8 +106,12 @@ export async function POST(request: NextRequest) {
   // 1. Property data from the DB is always available as a grounding
   // baseline, so the concierge never has nothing to work with — this is
   // what lets simple prompts ("Bună", "Camere", "Restaurant") get a real
-  // answer instead of an immediate WhatsApp handoff.
-  const propertyFact = `Property "${contact.name}", address ${contact.address}. Phone ${contact.phone}, email ${contact.email}. Check-in from ${contact.checkIn}, check-out until ${contact.checkOut}. WhatsApp: https://wa.me/${contact.whatsapp}.`;
+  // answer instead of an immediate WhatsApp handoff. No raw phone/WhatsApp
+  // link goes into the facts — the model is instructed below to never
+  // print one; the app shows a "Continuă pe WhatsApp" button instead
+  // whenever `handoff` is true, driven by the [[WHATSAPP_HANDOFF]] marker
+  // (OpenAI path) or the deterministic rule below (fallback path).
+  const propertyFact = `Property "${contact.name}", address ${contact.address}. Phone ${contact.phone}, email ${contact.email}. Check-in from ${contact.checkIn}, check-out until ${contact.checkOut}.`;
   const groundingFacts: string[] = [propertyFact];
 
   if (areaContext) groundingFacts.push(areaContext);
@@ -150,7 +154,8 @@ export async function POST(request: NextRequest) {
         : "To book, the guest can use the website's booking page (real-time availability) or contact the property directly by phone or WhatsApp."
     );
   }
-  if (asksAboutWhatsapp) groundingFacts.push(`WhatsApp: https://wa.me/${contact.whatsapp}`);
+  // No raw wa.me link here — asking about WhatsApp always gets the button
+  // (see HANDOFF_MARKER below), not a link printed into the answer text.
   if (isGreeting) {
     groundingFacts.push(
       locale === "ro"
@@ -168,6 +173,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // The model never prints a phone number or wa.me link itself — instead it
+  // appends this exact marker on its own final line when a human handoff is
+  // warranted (question not fully covered by the facts, or the guest asks
+  // for WhatsApp/a human). The route strips the marker from the visible
+  // text and turns it into `handoff: true`, which is what makes the
+  // ChatWidget render the "Continuă pe WhatsApp" button — never raw link
+  // text inside the AI's own answer.
+  const HANDOFF_MARKER = "[[WHATSAPP_HANDOFF]]";
+
   let engineReason: string | undefined;
   if (await isAiConfigured()) {
     const result = await completeChatDetailed([
@@ -176,12 +190,19 @@ export async function POST(request: NextRequest) {
         content:
           `You are the AI Concierge for ${dict.common.brand}, a luxury hospitality property. Answer using the facts provided below, in a warm, natural, concierge tone. ` +
           `Reply in ${locale === "ro" ? "Romanian" : "English"}. Never invent information not present in the facts (prices, policies, place names). ` +
-          `Always give a helpful, complete answer — never a bare "I don't know" — and when the facts don't fully cover the question, offer to connect the guest with the team on WhatsApp.\n\nFacts:\n${groundingFacts.join("\n\n")}`,
+          `Never include a phone number or a WhatsApp link/URL in your answer text — the app shows a WhatsApp button on its own when needed. ` +
+          `Always give a helpful, complete answer — never a bare "I don't know". If the facts don't fully cover the question, or the guest asks to talk to a human/the team/WhatsApp, ` +
+          `write your best answer and then add the exact text "${HANDOFF_MARKER}" alone on the final line (it will never be shown to the guest). ` +
+          `Do not add it when the facts already fully answer the question.\n\nFacts:\n${groundingFacts.join("\n\n")}`,
       },
       ...history.map((h) => ({ role: h.role, content: h.content })),
       { role: "user", content: question },
     ]);
-    if (result.content) return NextResponse.json({ answer: result.content, handoff: false, engine: "openai" });
+    if (result.content) {
+      const handoff = result.content.includes(HANDOFF_MARKER);
+      const answer = result.content.replaceAll(HANDOFF_MARKER, "").trim();
+      return NextResponse.json({ answer, handoff, engine: "openai" });
+    }
     engineReason = result.reason;
   } else {
     engineReason = "no_api_key";
@@ -189,11 +210,15 @@ export async function POST(request: NextRequest) {
 
   // Deterministic fallback (no API key / API error): prefer the most
   // specific matched fact over the generic property baseline, but there is
-  // always at least the property fact — this is never a dead end.
+  // always at least the property fact — this is never a dead end. Handoff
+  // is offered whenever the guest explicitly asked for WhatsApp, or when
+  // nothing specific matched (just the generic property baseline) — that's
+  // the "dead end" case a human should pick up.
+  const handoff = asksAboutWhatsapp || (!bestMatch && groundingFacts.length <= 1);
   const fallbackAnswer = bestMatch
     ? bestMatch.answer[locale] ?? bestMatch.answer.en
     : groundingFacts.length > 1
       ? groundingFacts[groundingFacts.length - 1]
       : groundingFacts[0];
-  return NextResponse.json({ answer: fallbackAnswer, handoff: false, engine: "rules", engineReason });
+  return NextResponse.json({ answer: fallbackAnswer, handoff, engine: "rules", engineReason });
 }

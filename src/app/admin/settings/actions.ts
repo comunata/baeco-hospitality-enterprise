@@ -51,7 +51,7 @@ const propertyContactSchema = z.object({
   name: z.string().min(1, "Numele este obligatoriu"),
   email: z.string().email("Email invalid"),
   phone: z.string().min(5, "Telefon invalid"),
-  whatsapp: z.string().min(5, "WhatsApp invalid").regex(/^\d+$/, "Doar cifre, fără + sau spații (ex: 40754417713)"),
+  whatsapp: z.string().min(5, "WhatsApp invalid").regex(/^\d+$/, "Doar cifre, fără + sau spații (ex: 40757239757)"),
   address: z.string().min(3, "Adresa este obligatorie"),
   checkIn: z.string().min(1),
   checkOut: z.string().min(1),

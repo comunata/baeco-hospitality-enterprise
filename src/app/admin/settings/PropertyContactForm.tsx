@@ -35,7 +35,7 @@ export function PropertyContactForm({ info }: { info: PropertyContactInfo }) {
           <input name="phone" defaultValue={info.phone} required className={fieldClass} />
         </label>
         <label className="block text-sm text-ivory">
-          <span className={labelClass}>WhatsApp (doar cifre, cu cod țară — ex: 40754417713)</span>
+          <span className={labelClass}>WhatsApp (doar cifre, cu cod țară — ex: 40757239757)</span>
           <input name="whatsapp" defaultValue={info.whatsapp} required className={fieldClass} />
         </label>
       </div>
