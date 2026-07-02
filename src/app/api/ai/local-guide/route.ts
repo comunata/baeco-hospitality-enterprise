@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDictionary } from "@/lib/i18n";
 import { isLocale, defaultLocale, type Locale } from "@/lib/i18n/config";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { isModuleEnabledRuntime } from "@/lib/data/settings";
 import { buildDestinationAnswer, buildDestinationCards } from "@/lib/destination-planner";
 import { destinationBase, destinationPlaces } from "@/lib/data/destination";
 import { buildStayPlan, buildDiningGuide, buildPersonaGuide, buildAiAreaContext, hasApprovedKnowledge, type ItineraryDays, type StayPlan } from "@/lib/intelligence/planner";
@@ -75,6 +76,10 @@ async function buildGroundingFacts(locale: Locale): Promise<string> {
 export async function POST(request: NextRequest) {
   const limited = checkRateLimit(request, "ai-local-guide", { maxRequests: 15, windowMs: 60_000 });
   if (limited) return limited;
+
+  if (!(await isModuleEnabledRuntime("aiLocalGuide"))) {
+    return NextResponse.json({ error: "module_disabled" }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => null);
   const parsed = requestSchema.safeParse(body);

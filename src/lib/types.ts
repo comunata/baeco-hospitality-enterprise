@@ -22,6 +22,8 @@ export interface Room {
   extraServiceIds: string[];
   virtualTourUrl?: string;
   active: boolean;
+  /** Physical units of this room type (1 = villa/apartment, N = hotel). */
+  totalUnits?: number;
 }
 
 export type ExtraServiceChargeType = "per_person" | "per_room" | "per_booking" | "per_night";
@@ -108,6 +110,12 @@ export interface Booking {
   totals: PriceBreakdown;
   createdAt: string;
   source: "website" | "booking.com" | "airbnb" | "expedia" | "phone" | "admin";
+  /** Shared code linking the rooms of one multi-room reservation. */
+  groupCode?: string;
+  /** Online check-in (portal): set once the guest completes the form. */
+  checkedInAt?: string;
+  arrivalTime?: string;
+  checkinNotes?: string;
 }
 
 export interface PriceLine {

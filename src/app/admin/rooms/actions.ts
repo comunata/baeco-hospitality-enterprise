@@ -19,6 +19,7 @@ const roomSchema = z.object({
   maxChildren: z.coerce.number().int().min(0),
   sizeSqm: z.coerce.number().min(0),
   basePrice: z.coerce.number().min(0),
+  totalUnits: z.coerce.number().int().min(1).default(1),
   beds: z.string().optional(),
   amenities: z.string().optional(),
   gallery: z.string().optional(),
@@ -75,6 +76,7 @@ export async function saveRoomAction(_prevState: RoomFormState, formData: FormDa
     extraServiceIds: [],
     virtualTourUrl: data.virtualTourUrl?.trim() || undefined,
     active: data.activeCheckbox === "true",
+    totalUnits: data.totalUnits,
   };
 
   try {

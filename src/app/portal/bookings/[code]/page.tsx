@@ -5,6 +5,7 @@ import { getBookingByCode, canCancelFreely } from "@/lib/data/bookings";
 import { getRoomBySlug, getRooms } from "@/lib/data/rooms";
 import { StatusBadge } from "@/components/admin/AdminTable";
 import { BookingDetailClient } from "@/components/portal/BookingDetailClient";
+import { OnlineCheckInCard } from "@/components/portal/OnlineCheckInCard";
 import { UpsellRecommendations } from "@/components/portal/UpsellRecommendations";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -38,6 +39,12 @@ export default async function PortalBookingDetailPage({ params }: { params: Prom
         <a href={`/api/portal/bookings/${booking.code}/ics`} className="mt-3 inline-block text-xs uppercase tracking-widest text-champagne underline">
           {dict.portal.exportCalendar}
         </a>
+
+        {booking.status !== "cancelled" && (
+          <div className="mt-10">
+            <OnlineCheckInCard booking={booking} locale={locale} />
+          </div>
+        )}
 
         <div className="mt-10">
           <BookingDetailClient booking={booking} dict={dict} canCancelFree={canCancelFreely(booking.checkIn)} />

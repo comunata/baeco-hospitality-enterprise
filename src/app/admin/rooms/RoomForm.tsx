@@ -35,7 +35,8 @@ export function RoomForm({ room }: { room?: Room }) {
 
       <fieldset className="space-y-4">
         <legend className="mb-2 text-[11px] font-medium uppercase tracking-[0.2em] text-stone">Capacitate & preț</legend>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+          <Field label="Camere disponibile (unități)" name="totalUnits" type="number" min={1} defaultValue={room?.totalUnits ?? 1} required />
           <Field label="Adulți max" name="maxAdults" type="number" min={1} defaultValue={room?.maxAdults ?? 2} required />
           <Field label="Copii max" name="maxChildren" type="number" min={0} defaultValue={room?.maxChildren ?? 0} required />
           <Field label="Suprafață (m²)" name="sizeSqm" type="number" min={0} defaultValue={room?.sizeSqm ?? 20} required />

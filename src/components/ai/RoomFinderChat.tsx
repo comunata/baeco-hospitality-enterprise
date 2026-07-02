@@ -19,6 +19,10 @@ interface RoomHit {
   slug: string;
   name: string;
   price: number;
+  totalEstimate?: number;
+  nights?: number;
+  available?: boolean;
+  bookingUrl?: string;
 }
 
 export function RoomFinderChat({ locale, dict }: { locale: Locale; dict: Dictionary }) {
@@ -163,10 +167,12 @@ export function RoomFinderChat({ locale, dict }: { locale: Locale; dict: Diction
               {rooms.map((r) => (
                 <Link
                   key={r.id}
-                  href={`/${locale}/rooms/${r.slug}`}
-                  className="rounded-full border border-champagne/30 px-3 py-1.5 text-xs text-champagne hover:bg-champagne/10"
+                  href={r.available === false ? `/${locale}/rooms/${r.slug}` : r.bookingUrl ?? `/${locale}/booking?room=${r.slug}`}
+                  className={`rounded-full border px-3 py-1.5 text-xs ${r.available === false ? "border-platinum/25 text-stone" : "border-champagne/30 text-champagne hover:bg-champagne/10"}`}
                 >
                   {r.name}
+                  {typeof r.totalEstimate === "number" && r.available !== false && ` · ${r.totalEstimate} EUR`}
+                  {r.available === false && (locale === "ro" ? " · indisponibilă" : " · unavailable")}
                 </Link>
               ))}
             </div>

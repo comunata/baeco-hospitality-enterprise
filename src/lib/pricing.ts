@@ -51,6 +51,8 @@ export interface PricingInput {
   promotion?: Promotion;
   voucher?: GiftVoucher;
   rateOverrides?: RoomRateOverride[];
+  /** Overrides the default tourist tax (admin-configurable in Settings). */
+  touristTaxPerPersonPerNight?: number;
   /** Injectable for tests; defaults to the real current time. */
   now?: Date;
   currency?: string;
@@ -68,7 +70,7 @@ export function assertMinNightsSatisfied(checkIn: string, checkOut: string, seas
 }
 
 export function calculateBookingPrice(input: PricingInput): PriceBreakdown {
-  const { room, checkIn, checkOut, guests, extras, seasons, services, promotion, voucher, rateOverrides = [], now = new Date(), currency = "EUR" } = input;
+  const { room, checkIn, checkOut, guests, extras, seasons, services, promotion, voucher, rateOverrides = [], now = new Date(), currency = "EUR", touristTaxPerPersonPerNight = TOURIST_TAX_PER_PERSON_PER_NIGHT } = input;
   const nights = eachNight(checkIn, checkOut);
   if (nights.length < 1) {
     throw new Error("invalid_dates");
@@ -146,7 +148,7 @@ export function calculateBookingPrice(input: PricingInput): PriceBreakdown {
     lines.push({ label: `Cod promoțional ${promotion.code}`, amount: -discountAmount });
   }
 
-  const taxAmount = chargeableGuests * nights.length * TOURIST_TAX_PER_PERSON_PER_NIGHT;
+  const taxAmount = chargeableGuests * nights.length * touristTaxPerPersonPerNight;
   lines.push({ label: "Taxă turistică", amount: taxAmount });
 
   const runningTotal = preDiscountSubtotal - discountAmount + taxAmount;

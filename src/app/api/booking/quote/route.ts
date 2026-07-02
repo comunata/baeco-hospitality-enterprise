@@ -5,6 +5,8 @@ import { getServices } from "@/lib/data/services";
 import { getSeasons, getRoomRateOverrides } from "@/lib/data/seasons";
 import { getPromotionByCode, getVoucherByCode, validatePromotionForStay } from "@/lib/data/promotions";
 import { calculateBookingPrice, eachNight } from "@/lib/pricing";
+import { getAvailableUnits } from "@/lib/data/bookings";
+import { getBookingSettings } from "@/lib/data/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 const quoteSchema = z.object({
@@ -57,10 +59,11 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const [services, seasons, rateOverrides, promotion, voucher] = await Promise.all([
+  const [services, seasons, rateOverrides, bookingSettings, promotion, voucher] = await Promise.all([
     getServices(),
     getSeasons(),
     getRoomRateOverrides(),
+    getBookingSettings(),
     input.promoCode ? getPromotionByCode(input.promoCode) : Promise.resolve(undefined),
     input.voucherCode ? getVoucherByCode(input.voucherCode) : Promise.resolve(undefined),
   ]);
@@ -83,11 +86,16 @@ export async function POST(request: NextRequest) {
       promotion,
       voucher,
       rateOverrides,
+      touristTaxPerPersonPerNight: bookingSettings.touristTaxPerPersonPerNight,
     });
+    const unitsLeft = await getAvailableUnits(room, input.checkIn, input.checkOut);
     return NextResponse.json({
       breakdown,
       promoApplied: Boolean(promotion),
       voucherApplied: Boolean(voucher),
+      available: unitsLeft > 0,
+      unitsLeft,
+      cancellationPolicy: bookingSettings.cancellationPolicy,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "invalid_dates";

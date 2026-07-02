@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { seedBookings } from "./seed/bookings";
 import { getRoomBlocks } from "./availability";
-import type { Booking } from "@/lib/types";
+import type { Booking, PriceBreakdown } from "@/lib/types";
 
 /**
  * In-memory store used only when Supabase isn't configured, so the booking
@@ -15,6 +15,105 @@ import type { Booking } from "@/lib/types";
  * SUPABASE_SERVICE_ROLE_KEY for real persistence.
  */
 const memoryBookings: Booking[] = [...seedBookings];
+
+// ---------------------------------------------------------------------------
+// Row mapping. The bookings table is snake_case with flattened guest fields;
+// the app type is camelCase with nested guest/guests. Without this mapping,
+// inserts are rejected by PostgREST (unknown camelCase columns) and reads
+// produce objects whose fields the app can't see — bookings would silently
+// live only in the in-memory store even with Supabase fully configured.
+// ---------------------------------------------------------------------------
+
+interface BookingRow {
+  id: string;
+  code: string;
+  room_id: string;
+  check_in: string;
+  check_out: string;
+  adults: number;
+  children: number;
+  child_ages: number[];
+  infants: number;
+  promo_code: string | null;
+  voucher_code: string | null;
+  guest_first_name: string;
+  guest_last_name: string;
+  guest_email: string;
+  guest_phone: string | null;
+  special_requests: string | null;
+  status: Booking["status"];
+  totals: PriceBreakdown;
+  source: Booking["source"];
+  created_at: string;
+  group_code: string | null;
+  checked_in_at: string | null;
+  arrival_time: string | null;
+  checkin_notes: string | null;
+}
+
+function fromRow(row: BookingRow): Booking {
+  return {
+    id: row.id,
+    code: row.code,
+    roomId: row.room_id,
+    checkIn: row.check_in,
+    checkOut: row.check_out,
+    guests: { adults: row.adults, children: row.children, childAges: row.child_ages ?? [], infants: row.infants ?? 0 },
+    extras: [], // itemized extras live in totals.lines; the structured list isn't persisted as a column
+    promoCode: row.promo_code ?? undefined,
+    voucherCode: row.voucher_code ?? undefined,
+    guest: {
+      firstName: row.guest_first_name,
+      lastName: row.guest_last_name,
+      email: row.guest_email,
+      phone: row.guest_phone ?? "",
+    },
+    specialRequests: row.special_requests ?? undefined,
+    status: row.status,
+    totals: row.totals,
+    createdAt: row.created_at,
+    source: row.source,
+    groupCode: row.group_code ?? undefined,
+    checkedInAt: row.checked_in_at ?? undefined,
+    arrivalTime: row.arrival_time ?? undefined,
+    checkinNotes: row.checkin_notes ?? undefined,
+  };
+}
+
+function toRow(booking: Booking): Record<string, unknown> {
+  return {
+    code: booking.code,
+    room_id: booking.roomId,
+    check_in: booking.checkIn,
+    check_out: booking.checkOut,
+    adults: booking.guests.adults,
+    children: booking.guests.children,
+    child_ages: booking.guests.childAges,
+    infants: booking.guests.infants,
+    promo_code: booking.promoCode ?? null,
+    voucher_code: booking.voucherCode ?? null,
+    guest_first_name: booking.guest.firstName,
+    guest_last_name: booking.guest.lastName,
+    guest_email: booking.guest.email,
+    guest_phone: booking.guest.phone || null,
+    special_requests: booking.specialRequests ?? null,
+    status: booking.status,
+    totals: booking.totals,
+    source: booking.source,
+    group_code: booking.groupCode ?? null,
+  };
+}
+
+function patchToRow(patch: Partial<Booking>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (patch.status !== undefined) row.status = patch.status;
+  if (patch.specialRequests !== undefined) row.special_requests = patch.specialRequests;
+  if (patch.checkedInAt !== undefined) row.checked_in_at = patch.checkedInAt;
+  if (patch.arrivalTime !== undefined) row.arrival_time = patch.arrivalTime;
+  if (patch.checkinNotes !== undefined) row.checkin_notes = patch.checkinNotes;
+  row.updated_at = new Date().toISOString();
+  return row;
+}
 
 /**
  * Booking codes are guessable/enumerable identifiers used to look up and
@@ -37,8 +136,14 @@ export async function createBooking(booking: Booking): Promise<Booking> {
   if (isSupabaseConfigured()) {
     const admin = createAdminClient();
     if (admin) {
-      const { data, error } = await admin.from("bookings").insert(booking).select().single();
-      if (!error && data) return data as unknown as Booking;
+      const { data, error } = await admin.from("bookings").insert(toRow(booking)).select().single();
+      if (!error && data) return fromRow(data as BookingRow);
+      // A booking that isn't persisted is lost revenue — fail loudly instead
+      // of silently degrading to the ephemeral store when a DB exists.
+      if (error) {
+        console.error(`[bookings] insert failed: ${error.message}`);
+        throw new Error(error.message);
+      }
     }
   }
   memoryBookings.push(booking);
@@ -54,29 +159,57 @@ export async function getBookingsForRoom(roomId: string, from: string, to: strin
         .select("*")
         .eq("room_id", roomId)
         .neq("status", "cancelled")
-        .lte("check_in", to)
-        .gte("check_out", from);
-      if (!error && data) return data as unknown as Booking[];
+        .lt("check_in", to)
+        .gt("check_out", from);
+      if (!error && data) return (data as BookingRow[]).map(fromRow);
     }
   }
   return memoryBookings.filter((b) => b.roomId === roomId && b.status !== "cancelled" && b.checkIn < to && b.checkOut > from);
 }
 
 /**
- * Live availability: a room is available only if it has no overlapping
- * active bookings AND none of its nights fall inside a manual room_blocks
- * range (maintenance/closure, set from /admin/availability).
+ * Peak simultaneous occupancy of a room TYPE during a stay window: the
+ * maximum number of overlapping active bookings on any single night. Two
+ * back-to-back bookings don't stack; two fully-overlapping ones do.
  */
-export async function isRoomAvailable(roomId: string, checkIn: string, checkOut: string): Promise<boolean> {
-  const [overlapping, blocks] = await Promise.all([getBookingsForRoom(roomId, checkIn, checkOut), getRoomBlocks()]);
-  if (overlapping.length > 0) return false;
+export async function getPeakOccupancy(roomId: string, checkIn: string, checkOut: string): Promise<number> {
+  const overlapping = await getBookingsForRoom(roomId, checkIn, checkOut);
+  if (overlapping.length === 0) return 0;
+  let peak = 0;
+  for (let t = new Date(checkIn); t < new Date(checkOut); t.setDate(t.getDate() + 1)) {
+    const day = t.toISOString().slice(0, 10);
+    const occupied = overlapping.filter((b) => b.checkIn <= day && b.checkOut > day).length;
+    if (occupied > peak) peak = occupied;
+  }
+  return peak;
+}
 
-  const roomBlocks = blocks.filter((b) => b.roomId === roomId);
-  if (roomBlocks.length === 0) return true;
+/**
+ * Units of a room type still free across the whole stay. Real inventory:
+ * a type with totalUnits=8 stays bookable until 8 stays overlap the same
+ * night. Manual blocks (maintenance/closure) close the entire type.
+ */
+export async function getAvailableUnits(
+  room: { id: string; totalUnits?: number },
+  checkIn: string,
+  checkOut: string
+): Promise<number> {
+  const totalUnits = Math.max(1, room.totalUnits ?? 1);
+  const [peak, blocks] = await Promise.all([getPeakOccupancy(room.id, checkIn, checkOut), getRoomBlocks()]);
 
-  // A block [start, end) overlaps the requested stay [checkIn, checkOut) if
-  // it starts before the stay ends and ends after the stay starts.
-  return !roomBlocks.some((b) => b.startDate < checkOut && b.endDate > checkIn);
+  const blocked = blocks.some((b) => b.roomId === room.id && b.startDate < checkOut && b.endDate > checkIn);
+  if (blocked) return 0;
+
+  return Math.max(0, totalUnits - peak);
+}
+
+export async function isRoomAvailable(
+  room: { id: string; totalUnits?: number },
+  checkIn: string,
+  checkOut: string,
+  unitsNeeded = 1
+): Promise<boolean> {
+  return (await getAvailableUnits(room, checkIn, checkOut)) >= unitsNeeded;
 }
 
 export async function getAllBookings(): Promise<Booking[]> {
@@ -84,7 +217,7 @@ export async function getAllBookings(): Promise<Booking[]> {
     const supabase = await createClient();
     if (supabase) {
       const { data, error } = await supabase.from("bookings").select("*").order("check_in", { ascending: true });
-      if (!error && data) return data as unknown as Booking[];
+      if (!error && data) return (data as BookingRow[]).map(fromRow);
     }
   }
   return memoryBookings;
@@ -93,6 +226,12 @@ export async function getAllBookings(): Promise<Booking[]> {
 export async function getBookingByCode(code: string): Promise<Booking | undefined> {
   const bookings = await getAllBookings();
   return bookings.find((b) => b.code === code);
+}
+
+/** All rooms of one multi-room reservation (or the single booking itself). */
+export async function getBookingsForGroup(groupCode: string): Promise<Booking[]> {
+  const bookings = await getAllBookings();
+  return bookings.filter((b) => b.groupCode === groupCode || b.code === groupCode);
 }
 
 export async function getBookingsForGuestEmail(email: string): Promise<Booking[]> {
@@ -104,8 +243,8 @@ async function mutateBooking(code: string, patch: Partial<Booking>): Promise<Boo
   if (isSupabaseConfigured()) {
     const admin = createAdminClient();
     if (admin) {
-      const { data, error } = await admin.from("bookings").update(patch).eq("code", code).select().maybeSingle();
-      if (!error && data) return data as unknown as Booking;
+      const { data, error } = await admin.from("bookings").update(patchToRow(patch)).eq("code", code).select().maybeSingle();
+      if (!error && data) return fromRow(data as BookingRow);
     }
   }
   const booking = memoryBookings.find((b) => b.code === code);
@@ -124,6 +263,22 @@ export async function cancelBooking(code: string): Promise<Booking | undefined> 
   return mutateBooking(code, { status: "cancelled" });
 }
 
+export async function updateBookingStatus(code: string, status: Booking["status"]): Promise<Booking | undefined> {
+  return mutateBooking(code, { status });
+}
+
 export async function updateSpecialRequests(code: string, specialRequests: string): Promise<Booking | undefined> {
   return mutateBooking(code, { specialRequests });
+}
+
+/** Online check-in from the guest portal. */
+export async function completeOnlineCheckIn(
+  code: string,
+  details: { arrivalTime: string; notes?: string }
+): Promise<Booking | undefined> {
+  return mutateBooking(code, {
+    checkedInAt: new Date().toISOString(),
+    arrivalTime: details.arrivalTime,
+    checkinNotes: details.notes,
+  });
 }

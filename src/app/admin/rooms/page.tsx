@@ -27,6 +27,7 @@ export default async function AdminRoomsPage() {
         columns={[
           { header: "Nume", render: (r) => r.name.ro },
           { header: "Capacitate", render: (r) => `${r.maxAdults} + ${r.maxChildren}` },
+          { header: "Unități", render: (r) => String(r.totalUnits ?? 1) },
           { header: "Suprafață", render: (r) => `${r.sizeSqm} m²` },
           { header: "Preț de bază", render: (r) => formatCurrency(r.basePrice) },
           { header: "Status", render: (r) => <StatusBadge status={r.active ? "active" : "inactive"} /> },

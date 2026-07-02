@@ -7,12 +7,46 @@ import type { Season } from "@/lib/types";
 
 const memorySeasons: Season[] = [...seedSeasons];
 
+// snake_case DB row ↔ camelCase app type (see note in lib/data/rooms.ts).
+interface SeasonRow {
+  id: string;
+  name: Season["name"];
+  start_date: string;
+  end_date: string;
+  multiplier: number;
+  weekend_multiplier: number;
+  min_nights: number | null;
+}
+
+function fromRow(row: SeasonRow): Season {
+  return {
+    id: row.id,
+    name: row.name ?? { ro: "", en: "" },
+    startDate: row.start_date,
+    endDate: row.end_date,
+    multiplier: Number(row.multiplier),
+    weekendMultiplier: Number(row.weekend_multiplier),
+    minNights: row.min_nights ?? undefined,
+  };
+}
+
+function toRow(season: Partial<Season>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (season.name !== undefined) row.name = season.name;
+  if (season.startDate !== undefined) row.start_date = season.startDate;
+  if (season.endDate !== undefined) row.end_date = season.endDate;
+  if (season.multiplier !== undefined) row.multiplier = season.multiplier;
+  if (season.weekendMultiplier !== undefined) row.weekend_multiplier = season.weekendMultiplier;
+  if (season.minNights !== undefined) row.min_nights = season.minNights ?? null;
+  return row;
+}
+
 export async function getSeasons(): Promise<Season[]> {
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     if (supabase) {
       const { data, error } = await supabase.from("seasons").select("*");
-      if (!error && data && data.length > 0) return data as unknown as Season[];
+      if (!error && data && data.length > 0) return (data as SeasonRow[]).map(fromRow);
     }
   }
   return memorySeasons;
@@ -29,8 +63,8 @@ export async function createSeason(season: Season): Promise<Season> {
   if (isSupabaseConfigured()) {
     const admin = createAdminClient();
     if (admin) {
-      const { data, error } = await admin.from("seasons").insert(season).select().single();
-      if (!error && data) return data as unknown as Season;
+      const { data, error } = await admin.from("seasons").insert(toRow(season)).select().single();
+      if (!error && data) return fromRow(data as SeasonRow);
       if (error) throw new Error(error.message);
     }
   }
@@ -42,8 +76,8 @@ export async function updateSeason(id: string, patch: Partial<Season>): Promise<
   if (isSupabaseConfigured()) {
     const admin = createAdminClient();
     if (admin) {
-      const { data, error } = await admin.from("seasons").update(patch).eq("id", id).select().maybeSingle();
-      if (!error && data) return data as unknown as Season;
+      const { data, error } = await admin.from("seasons").update(toRow(patch)).eq("id", id).select().maybeSingle();
+      if (!error && data) return fromRow(data as SeasonRow);
       if (error) throw new Error(error.message);
     }
   }

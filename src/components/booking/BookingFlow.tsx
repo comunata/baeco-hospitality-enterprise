@@ -15,6 +15,22 @@ type Step = "room" | "details" | "confirmed";
 interface ConfirmResult {
   code: string;
   whatsappLink: string;
+  roomsCount: number;
+  grandTotal?: number;
+  currency?: string;
+}
+
+/** One extra room added to the reservation besides the primary one. */
+interface ExtraRoomSelection {
+  slug: string;
+  adults: number;
+  children: number;
+}
+
+interface RoomQuote {
+  breakdown: PriceBreakdown;
+  available: boolean;
+  unitsLeft?: number;
 }
 
 export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale; dict: Dictionary; rooms: Room[]; services: ExtraService[] }) {
@@ -30,6 +46,7 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(
     rooms.find((r) => r.slug === searchParams.get("room")) ?? null
   );
+  const [extraRooms, setExtraRooms] = useState<ExtraRoomSelection[]>([]);
   const [step, setStep] = useState<Step>(selectedRoom ? "details" : "room");
 
   const [extraQuantities, setExtraQuantities] = useState<Record<string, number>>({});
@@ -38,7 +55,7 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
   const [guest, setGuest] = useState({ firstName: "", lastName: "", email: "", phone: "" });
   const [specialRequests, setSpecialRequests] = useState("");
 
-  const [quote, setQuote] = useState<PriceBreakdown | null>(null);
+  const [quotes, setQuotes] = useState<RoomQuote[] | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [quoting, setQuoting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -57,56 +74,59 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
 
   const datesInvalid = useMemo(() => Boolean(selectedRoom) && new Date(checkOut) <= new Date(checkIn), [selectedRoom, checkIn, checkOut]);
 
+  // One quote request per room in the reservation (primary + additional);
+  // promo/voucher go to the primary room only, matching the create API.
   useEffect(() => {
     if (!selectedRoom || datesInvalid) return;
     const timeout = setTimeout(() => {
       setQuoting(true);
       setQuoteError(null);
-      fetch("/api/booking/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roomSlug: selectedRoom.slug,
-          checkIn,
-          checkOut,
-          adults,
-          children,
-          childAges,
-          extras: selectedExtras,
-          promoCode: promoCode || undefined,
-          voucherCode: voucherCode || undefined,
-        }),
-      })
-        .then(async (res) => {
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error ?? "quote_failed");
-          setQuote(data.breakdown);
-        })
+      const requests = [
+        { roomSlug: selectedRoom.slug, adults, children, childAges, extras: selectedExtras, promoCode: promoCode || undefined, voucherCode: voucherCode || undefined },
+        ...extraRooms.map((er) => ({ roomSlug: er.slug, adults: er.adults, children: er.children, childAges: [], extras: [] })),
+      ];
+      Promise.all(
+        requests.map((payload) =>
+          fetch("/api/booking/quote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, checkIn, checkOut }),
+          }).then(async (res) => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "quote_failed");
+            return { breakdown: data.breakdown as PriceBreakdown, available: data.available !== false, unitsLeft: data.unitsLeft as number | undefined };
+          })
+        )
+      )
+        .then(setQuotes)
         .catch(() => {
-          setQuote(null);
+          setQuotes(null);
           setQuoteError(dict.errors.generic);
         })
         .finally(() => setQuoting(false));
     }, 400);
     return () => clearTimeout(timeout);
-  }, [selectedRoom, datesInvalid, checkIn, checkOut, adults, children, childAges, selectedExtras, promoCode, voucherCode, dict]);
+  }, [selectedRoom, datesInvalid, checkIn, checkOut, adults, children, childAges, selectedExtras, promoCode, voucherCode, extraRooms, dict]);
+
+  const grandTotal = useMemo(() => (quotes ? quotes.reduce((sum, q) => sum + q.breakdown.total, 0) : 0), [quotes]);
+  const someUnavailable = useMemo(() => Boolean(quotes?.some((q) => !q.available)), [quotes]);
 
   async function confirmBooking() {
     if (!selectedRoom) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
+      const roomsPayload = [
+        { roomSlug: selectedRoom.slug, adults, children, childAges, extras: selectedExtras },
+        ...extraRooms.map((er) => ({ roomSlug: er.slug, adults: er.adults, children: er.children, childAges: [], extras: [] })),
+      ];
       const res = await fetch("/api/booking/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          roomSlug: selectedRoom.slug,
+          rooms: roomsPayload,
           checkIn,
           checkOut,
-          adults,
-          children,
-          childAges,
-          extras: selectedExtras,
           promoCode: promoCode || undefined,
           voucherCode: voucherCode || undefined,
           guest,
@@ -116,7 +136,13 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "booking_failed");
-      setResult({ code: data.booking.code, whatsappLink: data.whatsappLink });
+      setResult({
+        code: data.groupCode ?? data.booking.code,
+        whatsappLink: data.whatsappLink,
+        roomsCount: data.bookings?.length ?? 1,
+        grandTotal: data.grandTotal,
+        currency: data.booking?.totals?.currency,
+      });
       setStep("confirmed");
     } catch {
       setSubmitError(dict.errors.roomUnavailable);
@@ -135,6 +161,12 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
         <p className="font-display text-3xl text-champagne">{dict.booking.bookingConfirmed}</p>
         <p className="mt-4 text-sm text-stone">{dict.booking.bookingConfirmedText}</p>
         <p className="mt-6 rounded-sm border border-platinum/15 bg-midnight px-4 py-3 font-mono text-lg text-ivory">{result.code}</p>
+        {result.roomsCount > 1 && (
+          <p className="mt-3 text-sm text-stone">
+            {result.roomsCount} {locale === "ro" ? "camere rezervate" : "rooms booked"}
+            {result.grandTotal ? ` · ${formatCurrency(result.grandTotal, result.currency)}` : ""}
+          </p>
+        )}
         <a
           href={result.whatsappLink}
           target="_blank"
@@ -248,6 +280,72 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
               </button>
             </div>
 
+            {/* Multi-room: add more rooms to the same reservation. */}
+            <div>
+              <h3 className="font-display text-xl text-ivory">{locale === "ro" ? "Camere suplimentare" : "Additional rooms"}</h3>
+              {extraRooms.map((er, index) => {
+                const room = rooms.find((r) => r.slug === er.slug);
+                if (!room) return null;
+                return (
+                  <div key={`${er.slug}-${index}`} className="mt-3 flex flex-wrap items-center gap-3 rounded-sm border border-platinum/10 bg-graphite/40 px-4 py-3">
+                    <span className="flex-1 text-sm text-ivory">{room.name[locale] ?? room.name.en}</span>
+                    <label className="text-xs text-stone">
+                      {dict.bookingWidget.adults}{" "}
+                      <input
+                        type="number"
+                        min={1}
+                        max={room.maxAdults}
+                        value={er.adults}
+                        onChange={(e) => {
+                          const next = [...extraRooms];
+                          next[index] = { ...er, adults: Math.min(room.maxAdults, Math.max(1, Number(e.target.value) || 1)) };
+                          setExtraRooms(next);
+                        }}
+                        className="ml-1 w-16 rounded-sm border border-platinum/20 bg-graphite px-2 py-1 text-sm text-ivory"
+                      />
+                    </label>
+                    <label className="text-xs text-stone">
+                      {dict.bookingWidget.children}{" "}
+                      <input
+                        type="number"
+                        min={0}
+                        max={room.maxChildren}
+                        value={er.children}
+                        onChange={(e) => {
+                          const next = [...extraRooms];
+                          next[index] = { ...er, children: Math.min(room.maxChildren, Math.max(0, Number(e.target.value) || 0)) };
+                          setExtraRooms(next);
+                        }}
+                        className="ml-1 w-16 rounded-sm border border-platinum/20 bg-graphite px-2 py-1 text-sm text-ivory"
+                      />
+                    </label>
+                    <button
+                      onClick={() => setExtraRooms(extraRooms.filter((_, i) => i !== index))}
+                      className="text-xs uppercase tracking-wider text-red-300 hover:text-red-200"
+                    >
+                      {dict.common.delete}
+                    </button>
+                  </div>
+                );
+              })}
+              {extraRooms.length < 4 && (
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) setExtraRooms([...extraRooms, { slug: e.target.value, adults: 2, children: 0 }]);
+                  }}
+                  className="mt-3 rounded-sm border border-platinum/20 bg-graphite px-4 py-2.5 text-sm text-champagne focus:border-champagne focus:outline-none"
+                >
+                  <option value="">{locale === "ro" ? "+ Adaugă încă o cameră" : "+ Add another room"}</option>
+                  {rooms.map((room) => (
+                    <option key={room.id} value={room.slug}>
+                      {room.name[locale] ?? room.name.en} — {formatCurrency(room.basePrice)}{dict.common.perNight}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
             <div>
               <h3 className="font-display text-xl text-ivory">{dict.booking.extraServices}</h3>
               <div className="mt-4 space-y-3">
@@ -311,17 +409,33 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
           <div className="sticky top-28 rounded-sm border border-platinum/15 bg-graphite p-6">
             <h3 className="font-display text-xl text-ivory">{dict.booking.summary}</h3>
             {(datesInvalid || quoteError) && <p className="mt-4 text-sm text-red-400">{datesInvalid ? dict.errors.invalidDates : quoteError}</p>}
-            {quote && (
-              <div className="mt-4 space-y-2 text-sm">
-                {quote.lines.map((line, i) => (
-                  <div key={i} className="flex justify-between text-stone">
-                    <span>{line.label}</span>
-                    <span className={line.amount < 0 ? "text-emerald" : "text-ivory"}>{formatCurrency(line.amount)}</span>
-                  </div>
-                ))}
+            {someUnavailable && <p className="mt-4 text-sm text-red-400">{dict.errors.roomUnavailable}</p>}
+            {quotes && (
+              <div className="mt-4 space-y-4 text-sm">
+                {quotes.map((roomQuote, roomIndex) => {
+                  const room = roomIndex === 0 ? selectedRoom : rooms.find((r) => r.slug === extraRooms[roomIndex - 1]?.slug);
+                  return (
+                    <div key={roomIndex} className={cn(quotes.length > 1 && "border-b border-platinum/10 pb-3")}>
+                      {quotes.length > 1 && (
+                        <p className="mb-2 text-[11px] uppercase tracking-wider text-champagne">{room?.name[locale] ?? room?.name.en}</p>
+                      )}
+                      {roomQuote.breakdown.lines.map((line, i) => (
+                        <div key={i} className="flex justify-between text-stone">
+                          <span>{line.label}</span>
+                          <span className={line.amount < 0 ? "text-emerald" : "text-ivory"}>{formatCurrency(line.amount)}</span>
+                        </div>
+                      ))}
+                      {typeof roomQuote.unitsLeft === "number" && roomQuote.unitsLeft <= 3 && roomQuote.unitsLeft > 0 && (
+                        <p className="mt-1 text-[11px] text-amber-200">
+                          {locale === "ro" ? `Doar ${roomQuote.unitsLeft} disponibile` : `Only ${roomQuote.unitsLeft} left`}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
                 <div className="flex justify-between border-t border-platinum/10 pt-3 font-display text-lg text-champagne">
                   <span>{dict.common.total}</span>
-                  <span>{formatCurrency(quote.total, quote.currency)}</span>
+                  <span>{formatCurrency(grandTotal, quotes[0].breakdown.currency)}</span>
                 </div>
               </div>
             )}
@@ -329,7 +443,7 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
 
             <button
               onClick={confirmBooking}
-              disabled={submitting || !quote || !guest.firstName || !guest.email}
+              disabled={submitting || !quotes || someUnavailable || !guest.firstName || !guest.email}
               className="mt-6 w-full rounded-sm bg-champagne px-6 py-3.5 text-xs font-medium uppercase tracking-[0.15em] text-midnight disabled:opacity-50"
             >
               {submitting ? dict.common.loading : dict.booking.confirmBooking}

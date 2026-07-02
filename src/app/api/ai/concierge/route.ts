@@ -10,6 +10,7 @@ import { getDictionary } from "@/lib/i18n";
 import { isLocale, defaultLocale } from "@/lib/i18n/config";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { isModuleEnabledRuntime } from "@/lib/data/settings";
 
 const requestSchema = z.object({
   question: z.string().min(1).max(1000),
@@ -32,6 +33,10 @@ function scoreKnowledgeItem(question: string, keywords: string[]): number {
 export async function POST(request: NextRequest) {
   const limited = checkRateLimit(request, "ai-concierge", { maxRequests: 20, windowMs: 60_000 });
   if (limited) return limited;
+
+  if (!(await isModuleEnabledRuntime("aiConcierge"))) {
+    return NextResponse.json({ error: "module_disabled" }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => null);
   const parsed = requestSchema.safeParse(body);

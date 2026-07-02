@@ -5,7 +5,7 @@ import { getDictionary } from "@/lib/i18n";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ChatWidget } from "@/components/ai/ChatWidget";
-import { isModuleEnabled } from "@/config/modules";
+import { getModuleFlags } from "@/lib/data/settings";
 
 export function generateStaticParams() {
   return [{ locale: "ro" }, { locale: "en" }];
@@ -41,13 +41,14 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const dict = getDictionary(locale as Locale);
+  const moduleFlags = await getModuleFlags();
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header locale={locale as Locale} dict={dict} />
       <main className="flex-1">{children}</main>
       <Footer locale={locale as Locale} dict={dict} />
-      {isModuleEnabled("aiConcierge") && <ChatWidget locale={locale as Locale} dict={dict} />}
+      {moduleFlags.aiConcierge && <ChatWidget locale={locale as Locale} dict={dict} />}
     </div>
   );
 }
