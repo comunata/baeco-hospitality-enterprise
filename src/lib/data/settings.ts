@@ -11,7 +11,7 @@ import { moduleFlags, type ModuleKey } from "@/config/modules";
  */
 
 export interface BookingSettings {
-  /** Tourist tax charged per adult per night (EUR). */
+  /** Tourist tax charged per adult per night (RON). */
   touristTaxPerPersonPerNight: number;
   /** Free-cancellation window, in days before check-in. */
   cancellationMinDaysBefore: number;

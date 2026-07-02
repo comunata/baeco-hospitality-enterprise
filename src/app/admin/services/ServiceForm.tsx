@@ -34,7 +34,7 @@ export function ServiceForm({ service }: { service?: ExtraService }) {
       <Field label="Slug (opțional)" name="slug" defaultValue={service?.slug} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Preț (EUR)" name="price" type="number" step="0.01" min={0} defaultValue={service?.price ?? 0} required />
+        <Field label="Preț (RON)" name="price" type="number" step="0.01" min={0} defaultValue={service?.price ?? 0} required />
         <label className="block text-sm text-ivory">
           <span className="mb-1 block text-[11px] uppercase tracking-wider text-stone">Mod de taxare</span>
           <select

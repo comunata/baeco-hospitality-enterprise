@@ -1,5 +1,17 @@
 import type { ExtraService } from "@/lib/types";
 
+/**
+ * Offline/demo fallback, used when the `services` table has no rows yet
+ * (see lib/data/services.ts) and referenced by id from seed/rooms.ts'
+ * includedServiceIds/extraServiceIds. These `id` values ("svc-breakfast"
+ * etc.) are stable local keys for this fallback dataset only — NOT
+ * database ids. `services.id` in Postgres is a real uuid (see
+ * supabase/migrations/0001_init.sql); prices/pricing match by this id
+ * consistently within the in-memory/seed world, but any write against the
+ * live table must resolve the matching row via `slug` first
+ * (resolveServiceUuid in lib/data/services.ts) — never send one of these
+ * ids straight into a `.eq("id", …)` query.
+ */
 export const seedServices: ExtraService[] = [
   { id: "svc-breakfast", slug: "breakfast", name: { ro: "Mic dejun", en: "Breakfast" }, description: { ro: "Mic dejun continental servit în restaurant.", en: "Continental breakfast served in the restaurant." }, price: 18, chargeType: "per_person", active: true },
   { id: "svc-dinner", slug: "dinner", name: { ro: "Cină", en: "Dinner" }, description: { ro: "Meniu degustare cu preparate locale.", en: "Tasting menu with local dishes." }, price: 35, chargeType: "per_person", active: true },
