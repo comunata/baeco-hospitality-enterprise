@@ -71,9 +71,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       if (booking.guest.phone) {
         await sendWhatsappTemplate(booking.guest.phone, renderTemplate(dict.whatsapp.cancellation, vars));
       }
-    } catch {
-      // Notification failures are logged by the integration adapters
-      // themselves (mock mode logs to console); never block cancellation.
+    } catch (err) {
+      // Never block cancellation on a notification failure — just log it.
+      console.error(`[booking:${booking.code}] cancellation notification threw`, err);
     }
 
     return NextResponse.json({ booking: updated, freeCancellation: free });
