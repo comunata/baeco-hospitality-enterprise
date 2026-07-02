@@ -22,7 +22,7 @@ export function BookingSettingsForm({ settings }: { settings: BookingSettings })
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="block text-sm text-ivory">
-          <span className={labelClass}>Taxă turistică (EUR / adult / noapte)</span>
+          <span className={labelClass}>Taxă turistică (RON / adult / noapte)</span>
           <input name="touristTaxPerPersonPerNight" type="number" step="0.1" min={0} defaultValue={settings.touristTaxPerPersonPerNight} className={fieldClass} />
         </label>
         <label className="block text-sm text-ivory">

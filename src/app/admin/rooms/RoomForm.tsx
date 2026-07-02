@@ -40,7 +40,7 @@ export function RoomForm({ room }: { room?: Room }) {
           <Field label="Adulți max" name="maxAdults" type="number" min={1} defaultValue={room?.maxAdults ?? 2} required />
           <Field label="Copii max" name="maxChildren" type="number" min={0} defaultValue={room?.maxChildren ?? 0} required />
           <Field label="Suprafață (m²)" name="sizeSqm" type="number" min={0} defaultValue={room?.sizeSqm ?? 20} required />
-          <Field label="Preț de bază (EUR/noapte)" name="basePrice" type="number" min={0} step="0.01" defaultValue={room?.basePrice ?? 100} required />
+          <Field label="Preț de bază (RON/noapte)" name="basePrice" type="number" min={0} step="0.01" defaultValue={room?.basePrice ?? 100} required />
         </div>
       </fieldset>
 

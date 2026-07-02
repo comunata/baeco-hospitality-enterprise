@@ -17,7 +17,7 @@ export default async function AdminPromotionsPage() {
         rows={promotions}
         columns={[
           { header: "Cod", render: (p) => <span className="font-mono">{p.code}</span> },
-          { header: "Tip", render: (p) => (p.type === "percentage" ? `${p.value}%` : `${p.value} EUR`) },
+          { header: "Tip", render: (p) => (p.type === "percentage" ? `${p.value}%` : `${p.value} RON`) },
           { header: "Valabilitate", render: (p) => `${formatDate(p.validFrom)} – ${formatDate(p.validTo)}` },
           { header: "Utilizări", render: (p) => `${p.redemptions}${p.maxRedemptions ? ` / ${p.maxRedemptions}` : ""}` },
           { header: "Status", render: (p) => <StatusBadge status={p.active ? "active" : "inactive"} /> },

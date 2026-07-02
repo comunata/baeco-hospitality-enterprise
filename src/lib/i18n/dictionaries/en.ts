@@ -30,7 +30,7 @@ const en: Dictionary = {
     readMore: "Read more",
     seeDetails: "See details",
     learnMore: "Learn more",
-    currency: "EUR",
+    currency: "RON",
     yes: "Yes",
     no: "No",
     optional: "optional",

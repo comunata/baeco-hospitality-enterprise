@@ -70,7 +70,7 @@ export function assertMinNightsSatisfied(checkIn: string, checkOut: string, seas
 }
 
 export function calculateBookingPrice(input: PricingInput): PriceBreakdown {
-  const { room, checkIn, checkOut, guests, extras, seasons, services, promotion, voucher, rateOverrides = [], now = new Date(), currency = "EUR", touristTaxPerPersonPerNight = TOURIST_TAX_PER_PERSON_PER_NIGHT } = input;
+  const { room, checkIn, checkOut, guests, extras, seasons, services, promotion, voucher, rateOverrides = [], now = new Date(), currency = "RON", touristTaxPerPersonPerNight = TOURIST_TAX_PER_PERSON_PER_NIGHT } = input;
   const nights = eachNight(checkIn, checkOut);
   if (nights.length < 1) {
     throw new Error("invalid_dates");

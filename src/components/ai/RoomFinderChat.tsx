@@ -171,7 +171,7 @@ export function RoomFinderChat({ locale, dict }: { locale: Locale; dict: Diction
                   className={`rounded-full border px-3 py-1.5 text-xs ${r.available === false ? "border-platinum/25 text-stone" : "border-champagne/30 text-champagne hover:bg-champagne/10"}`}
                 >
                   {r.name}
-                  {typeof r.totalEstimate === "number" && r.available !== false && ` · ${r.totalEstimate} EUR`}
+                  {typeof r.totalEstimate === "number" && r.available !== false && ` · ${r.totalEstimate} RON`}
                   {r.available === false && (locale === "ro" ? " · indisponibilă" : " · unavailable")}
                 </Link>
               ))}

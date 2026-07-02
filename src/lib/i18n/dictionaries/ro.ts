@@ -28,7 +28,7 @@ const ro = {
     readMore: "Citește mai mult",
     seeDetails: "Vezi detalii",
     learnMore: "Află mai multe",
-    currency: "EUR",
+    currency: "RON",
     yes: "Da",
     no: "Nu",
     optional: "opțional",

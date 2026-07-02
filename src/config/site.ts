@@ -20,5 +20,5 @@ export const siteConfig = {
   },
   checkIn: "14:00",
   checkOut: "11:00",
-  currency: "EUR",
+  currency: "RON",
 } as const;
