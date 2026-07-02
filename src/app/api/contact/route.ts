@@ -21,11 +21,12 @@ export async function POST(request: NextRequest) {
   }
   const { name, email, message } = parsed.data;
 
-  await sendEmail({
+  const result = await sendEmail({
     to: siteConfig.contact.email,
     subject: `Mesaj nou de la ${name}`,
     html: `<p><strong>${name}</strong> (${email}) a scris:</p><p>${message.replace(/</g, "&lt;")}</p>`,
   });
+  if (!result.sent) console.error(`[contact] message from ${email} not delivered (provider=${result.provider})`);
 
   return NextResponse.json({ ok: true });
 }

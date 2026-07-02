@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
   // must never skip the others or fail the booking itself, which is
   // already committed at this point.
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to: input.guest.email,
       subject: renderTemplate(guestConfirmationTemplate.subject, emailVars),
       html:
@@ -225,20 +225,24 @@ export async function POST(request: NextRequest) {
         `<p><strong>Total: ${formatCurrency(grandTotal, currency)}</strong></p>` +
         `<p>${dict.booking.summary}: ${groupCode}</p>`,
     });
-  } catch {
-    // Logged by the integration adapter itself (mock mode logs to console).
+    if (!result.sent) console.error(`[booking:${groupCode}] guest confirmation email not sent (provider=${result.provider}) to=${input.guest.email}`);
+  } catch (err) {
+    // A non-OK provider response is handled above (result.sent === false,
+    // already logged by the adapter); this only catches a thrown/network
+    // failure that never produced a response.
+    console.error(`[booking:${groupCode}] guest confirmation email threw`, err);
   }
 
   try {
     if (input.guest.phone) {
       await sendWhatsappTemplate(input.guest.phone, renderTemplate(dict.whatsapp.confirmation, notificationVars));
     }
-  } catch {
-    // Logged by the integration adapter itself (mock mode logs to console).
+  } catch (err) {
+    console.error(`[booking:${groupCode}] guest WhatsApp confirmation threw`, err);
   }
 
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to: contact.email,
       subject: renderTemplate(propertyNotificationTemplate.subject, notificationVars),
       html:
@@ -247,8 +251,9 @@ export async function POST(request: NextRequest) {
         `<ul>${roomLines}</ul>` +
         `<p><strong>Total: ${formatCurrency(grandTotal, currency)}</strong></p>`,
     });
-  } catch {
-    // Logged by the integration adapter itself (mock mode logs to console).
+    if (!result.sent) console.error(`[booking:${groupCode}] property notification email not sent (provider=${result.provider}) to=${contact.email}`);
+  } catch (err) {
+    console.error(`[booking:${groupCode}] property notification email threw`, err);
   }
 
   // The "message us on WhatsApp" link on the confirmation screen opens a
