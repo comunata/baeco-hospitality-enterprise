@@ -24,7 +24,8 @@ export async function completeChat(messages: AiChatMessage[]): Promise<string | 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${openaiApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages, temperature: 0.3, max_tokens: 500 }),
+      body: JSON.stringify({ model, messages, temperature: 0.4, max_tokens: 600 }),
+      signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) return null;
     const data = await res.json();

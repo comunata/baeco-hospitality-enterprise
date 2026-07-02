@@ -6,11 +6,67 @@
 -- source of truth for Explore, AI Concierge, AI Local Guide, AI Stay Planner
 -- and every future agent — the AI layer never invents places, it only reads
 -- what the administrator approved.
+--
+-- This migration is SELF-CONTAINED and IDEMPOTENT: it can be applied on a
+-- database where 0001_init.sql was never (or only partially) run, and can be
+-- safely re-run after a partial failure. It creates defensive versions of
+-- its dependencies (`properties`, `is_admin()`) only when they are missing.
+
+create extension if not exists "pgcrypto";
 
 -- ============================================================================
--- Property profile: extend the existing `properties` table with the fields
--- the discovery engine needs (2-minute onboarding: name, address, GPS,
--- category — everything else is derived or discovered).
+-- Dependency guards (normally provided by 0001_init.sql)
+-- ============================================================================
+
+-- `properties`: created here with the 0001 shape if it doesn't exist yet.
+create table if not exists properties (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  legal_name text,
+  address text,
+  lat double precision,
+  lng double precision,
+  phone text,
+  whatsapp text,
+  email text,
+  check_in_time text default '14:00',
+  check_out_time text default '11:00',
+  currency text not null default 'EUR',
+  created_at timestamptz not null default now()
+);
+
+-- `is_admin()`: created only if missing. This defensive version returns
+-- false when the roles/users tables don't exist yet (pre-0001 database),
+-- instead of erroring — admin writes go through the service-role client
+-- (which bypasses RLS), so this stays safe either way.
+do $$
+begin
+  if not exists (
+    select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where p.proname = 'is_admin' and n.nspname = 'public'
+  ) then
+    create function is_admin()
+    returns boolean
+    language plpgsql
+    security definer
+    stable
+    as $fn$
+    begin
+      if to_regclass('public.users') is null or to_regclass('public.roles') is null then
+        return false;
+      end if;
+      return exists (
+        select 1 from users u join roles r on r.id = u.role_id
+        where u.id = auth.uid() and r.key in ('owner', 'manager', 'staff')
+      );
+    end;
+    $fn$;
+  end if;
+end $$;
+
+-- ============================================================================
+-- Property profile: the fields the discovery engine needs (2-minute
+-- onboarding: name, address, GPS, category — the rest is derived/discovered).
 -- ============================================================================
 
 alter table properties add column if not exists category text not null default 'hotel'; -- hotel|guesthouse|villa|apartment|resort|chain
@@ -88,25 +144,38 @@ create table if not exists discovery_scans (
 );
 
 -- ============================================================================
--- RLS — same model as the rest of the schema: the public site reads only
--- approved content; every mutation goes through admin.
+-- RLS — the public site reads only approved content; every mutation goes
+-- through admin. `drop policy if exists` before each `create policy` keeps
+-- the whole block re-runnable (Postgres has no CREATE POLICY IF NOT EXISTS).
 -- ============================================================================
 
 alter table discovered_places enable row level security;
 alter table discovery_scans enable row level security;
 
+drop policy if exists "public read approved places" on discovered_places;
 create policy "public read approved places" on discovered_places
   for select using (status = 'approved');
+
+drop policy if exists "admin read all places" on discovered_places;
 create policy "admin read all places" on discovered_places
   for select using (is_admin());
+
+drop policy if exists "admin insert places" on discovered_places;
 create policy "admin insert places" on discovered_places
   for insert with check (is_admin());
+
+drop policy if exists "admin update places" on discovered_places;
 create policy "admin update places" on discovered_places
   for update using (is_admin());
+
+drop policy if exists "admin delete places" on discovered_places;
 create policy "admin delete places" on discovered_places
   for delete using (is_admin());
 
+drop policy if exists "admin read scans" on discovery_scans;
 create policy "admin read scans" on discovery_scans
   for select using (is_admin());
+
+drop policy if exists "admin insert scans" on discovery_scans;
 create policy "admin insert scans" on discovery_scans
   for insert with check (is_admin());

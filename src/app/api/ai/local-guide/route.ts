@@ -4,8 +4,10 @@ import { getDictionary } from "@/lib/i18n";
 import { isLocale, defaultLocale, type Locale } from "@/lib/i18n/config";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { buildDestinationAnswer, buildDestinationCards } from "@/lib/destination-planner";
-import { buildStayPlan, buildDiningGuide, buildPersonaGuide, hasApprovedKnowledge, type ItineraryDays, type StayPlan } from "@/lib/intelligence/planner";
+import { destinationBase, destinationPlaces } from "@/lib/data/destination";
+import { buildStayPlan, buildDiningGuide, buildPersonaGuide, buildAiAreaContext, hasApprovedKnowledge, type ItineraryDays, type StayPlan } from "@/lib/intelligence/planner";
 import { googleMapsPlaceLink } from "@/lib/discovery/engine";
+import { completeChat, isAiConfigured } from "@/lib/integrations/ai";
 import type { Persona } from "@/lib/discovery/types";
 
 const requestSchema = z.object({
@@ -55,6 +57,21 @@ function planToRouteCards(plan: StayPlan, locale: Locale) {
   }));
 }
 
+/**
+ * Grounding facts for the LLM: the admin-approved knowledge base when it
+ * exists, otherwise the curated destination seed data. The model rephrases
+ * and selects from these facts — it never invents places.
+ */
+async function buildGroundingFacts(locale: Locale): Promise<string> {
+  const approved = await buildAiAreaContext(locale);
+  if (approved) return approved;
+  const lang = locale === "ro" ? "ro" : "en";
+  const lines = destinationPlaces.map(
+    (p) => `- ${p.name[lang] ?? p.name.en} (${p.distanceKm} km / ${p.driveMinutes} min, ~${p.visitMinutes} min visit): ${p.description[lang] ?? p.description.en}`
+  );
+  return `${destinationBase.name}:\n${lines.join("\n")}`;
+}
+
 export async function POST(request: NextRequest) {
   const limited = checkRateLimit(request, "ai-local-guide", { maxRequests: 15, windowMs: 60_000 });
   if (limited) return limited;
@@ -70,12 +87,43 @@ export async function POST(request: NextRequest) {
   const wantsCards = isItineraryRequest || /(vizita|visit|copii|kids|ploua|rain|manc|eat|restaurant|traseu|route)/.test(q);
 
   try {
-    // Preferred path: the Hospitality Intelligence Engine. When the admin
-    // has an approved knowledge base, answers come exclusively from it —
-    // the guide recommends only places the property has vetted.
-    if (await hasApprovedKnowledge()) {
-      const persona = detectPersona(q);
+    const knowledgeApproved = await hasApprovedKnowledge();
+    const persona = detectPersona(q);
 
+    // Structured itinerary cards stay deterministic (times, distances, maps
+    // links) regardless of whether the LLM phrases the text answer.
+    let routeCards: ReturnType<typeof planToRouteCards> | ReturnType<typeof buildDestinationCards> | undefined;
+    if (wantsCards) {
+      if (knowledgeApproved) {
+        const plan = await buildStayPlan(requestedDays(q), persona);
+        if (plan.days.length > 0) routeCards = planToRouteCards(plan, locale).slice(0, 3);
+      }
+      if (!routeCards) routeCards = buildDestinationCards(locale).slice(0, isItineraryRequest ? 3 : 2);
+    }
+
+    // Preferred path: real LLM answer grounded in approved/curated facts —
+    // every question gets its own answer, in natural language.
+    if (await isAiConfigured()) {
+      const facts = await buildGroundingFacts(locale);
+      const answer = await completeChat([
+        {
+          role: "system",
+          content:
+            `You are the AI Local Guide of ${dict.common.brand}, a premium hospitality property. ` +
+            `Answer the guest's question directly and specifically, in ${locale === "ro" ? "Romanian" : "English"}, in a warm, concierge tone. ` +
+            `Recommend ONLY places from the facts below (with distances/times when useful). Never invent places, prices or schedules not present in the facts. ` +
+            `If the facts don't cover the question, say so and suggest asking the reception.\n\nFacts:\n${facts}`,
+        },
+        { role: "user", content: question },
+      ]);
+      if (answer) {
+        return NextResponse.json({ answer, itinerary: isItineraryRequest, routeCards, engine: "openai" });
+      }
+      // fall through to deterministic answers if the API call failed
+    }
+
+    // Deterministic fallback (no API key / API error): intent-based answers.
+    if (knowledgeApproved) {
       if (/(manc|eat|restaurant|pranz|cina|food|dinner|lunch)/.test(q)) {
         const dining = await buildDiningGuide();
         if (dining.length > 0) {
@@ -83,24 +131,10 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({
             answer: [locale === "ro" ? "Recomandările noastre gastronomice din zonă:" : "Our dining recommendations in the area:", ...lines].join("\n"),
             itinerary: false,
+            engine: "rules",
           });
         }
       }
-
-      if (isItineraryRequest) {
-        const plan = await buildStayPlan(requestedDays(q), persona);
-        if (plan.days.length > 0) {
-          return NextResponse.json({
-            answer:
-              locale === "ro"
-                ? `Am pregătit un plan pe ${plan.days.length} ${plan.days.length === 1 ? "zi" : "zile"} din locurile aprobate de proprietate.`
-                : `I prepared a ${plan.days.length}-day plan from the property's approved places.`,
-            itinerary: true,
-            routeCards: planToRouteCards(plan, locale).slice(0, 3),
-          });
-        }
-      }
-
       if (persona) {
         const picks = await buildPersonaGuide(persona);
         if (picks.length > 0) {
@@ -108,19 +142,31 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({
             answer: [locale === "ro" ? "Recomandări potrivite pentru voi:" : "Recommendations suited for you:", ...lines].join("\n"),
             itinerary: false,
+            engine: "rules",
           });
         }
       }
+      if (isItineraryRequest && routeCards?.length) {
+        return NextResponse.json({
+          answer:
+            locale === "ro"
+              ? "Am pregătit un plan din locurile aprobate de proprietate."
+              : "I prepared a plan from the property's approved places.",
+          itinerary: true,
+          routeCards,
+          engine: "rules",
+        });
+      }
     }
 
-    // Fallback: the curated Bucovina destination planner (seed data).
     const destination = buildDestinationAnswer(question, locale);
     return NextResponse.json({
       answer: destination.answer || dict.ai.concierge.handoffText,
       itinerary: isItineraryRequest,
-      routeCards: wantsCards ? buildDestinationCards(locale).slice(0, isItineraryRequest ? 3 : 2) : undefined,
+      routeCards,
+      engine: "rules",
     });
   } catch {
-    return NextResponse.json({ answer: dict.errors.generic, itinerary: false });
+    return NextResponse.json({ answer: dict.errors.generic, itinerary: false, engine: "rules" });
   }
 }

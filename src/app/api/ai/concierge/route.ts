@@ -100,9 +100,9 @@ export async function POST(request: NextRequest) {
       ...history.map((h) => ({ role: h.role, content: h.content })),
       { role: "user", content: question },
     ]);
-    if (answer) return NextResponse.json({ answer, handoff: false });
+    if (answer) return NextResponse.json({ answer, handoff: false, engine: "openai" });
   }
 
   const fallbackAnswer = bestMatch ? bestMatch.answer[locale] ?? bestMatch.answer.en : groundingFacts[0];
-  return NextResponse.json({ answer: fallbackAnswer, handoff: false });
+  return NextResponse.json({ answer: fallbackAnswer, handoff: false, engine: "rules" });
 }
