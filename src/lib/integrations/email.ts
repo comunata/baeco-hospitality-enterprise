@@ -8,7 +8,7 @@ export interface EmailMessage {
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const sendgridApiKey = process.env.SENDGRID_API_KEY;
-const fromAddress = process.env.EMAIL_FROM ?? "rezervari@baeco-hospitality.example.com";
+const fromAddress = process.env.EMAIL_FROM ?? "contact@baecodigital.ro";
 
 /**
  * Email adapter. Tries Resend, then SendGrid, then falls back to logging

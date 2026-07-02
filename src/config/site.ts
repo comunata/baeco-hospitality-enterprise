@@ -1,22 +1,28 @@
+/**
+ * Static fallback used when Supabase isn't configured (local/demo) or the
+ * `properties` row hasn't loaded yet. The live site prefers the DB values
+ * read via lib/data/property.ts (admin-editable from /admin/settings) —
+ * this is the baseline, not the source of truth.
+ */
 export const siteConfig = {
   name: "Baeco Hospitality",
-  legalName: "Baeco Hospitality Enterprise",
+  legalName: "BaecoDigital",
   tagline: {
     ro: "Ospitalitate discretă, standard de lux.",
     en: "Discreet hospitality, luxury standard.",
   },
-  domain: process.env.NEXT_PUBLIC_SITE_URL ?? "https://baeco-hospitality.example.com",
+  domain: process.env.NEXT_PUBLIC_SITE_URL ?? "https://baeco-hospitality-enterprise.netlify.app",
   contact: {
-    phone: "+40 700 000 000",
-    whatsapp: "40700000000",
-    email: "rezervari@baeco-hospitality.example.com",
-    address: "Str. Exemplu nr. 1, România",
-    lat: 45.9432,
-    lng: 24.9668,
+    phone: "+40 754 417 713",
+    whatsapp: "40754417713",
+    email: "contact@baecodigital.ro",
+    address: "Piața Republicii, nr. 1, 725300 Gura Humorului, România",
+    lat: 47.5546,
+    lng: 25.8898,
   },
   socials: {
-    instagram: "https://instagram.com/baecohospitality",
-    facebook: "https://facebook.com/baecohospitality",
+    instagram: "",
+    facebook: "",
   },
   checkIn: "14:00",
   checkOut: "11:00",

@@ -2,9 +2,11 @@ import Link from "next/link";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n";
 import { Container } from "@/components/ui/Container";
-import { siteConfig } from "@/config/site";
+import { getPropertyContactInfo } from "@/lib/data/property";
+import { AdminAccessIcon } from "./AdminAccessIcon";
 
-export function Footer({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export async function Footer({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+  const contact = await getPropertyContactInfo();
   const links = [
     { href: `/${locale}/rooms`, label: dict.nav.rooms },
     { href: `/${locale}/offers`, label: dict.nav.offers },
@@ -12,6 +14,10 @@ export function Footer({ locale, dict }: { locale: Locale; dict: Dictionary }) {
     { href: `/${locale}/faq`, label: dict.nav.faq },
     { href: `/${locale}/contact`, label: dict.nav.contact },
   ];
+  const socials = [
+    { href: contact.instagram, label: "Instagram" },
+    { href: contact.facebook, label: "Facebook" },
+  ].filter((s) => s.href);
 
   return (
     <footer className="border-t border-platinum/10 bg-graphite/60">
@@ -37,33 +43,37 @@ export function Footer({ locale, dict }: { locale: Locale; dict: Dictionary }) {
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-champagne">{dict.footer.contact}</p>
           <ul className="mt-4 space-y-3 text-sm text-stone">
-            <li>{siteConfig.contact.address}</li>
-            <li>{siteConfig.contact.phone}</li>
-            <li>{siteConfig.contact.email}</li>
+            <li>{contact.address}</li>
+            <li>{contact.phone}</li>
+            <li>{contact.email}</li>
             <li>
-              {dict.footer.checkIn} {siteConfig.checkIn} · {dict.footer.checkOut} {siteConfig.checkOut}
+              {dict.footer.checkIn} {contact.checkIn} · {dict.footer.checkOut} {contact.checkOut}
             </li>
           </ul>
         </div>
 
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-champagne">{dict.footer.followUs}</p>
-          <div className="mt-4 flex gap-4 text-sm text-stone">
-            <a href={siteConfig.socials.instagram} target="_blank" rel="noreferrer" className="hover:text-ivory">
-              Instagram
-            </a>
-            <a href={siteConfig.socials.facebook} target="_blank" rel="noreferrer" className="hover:text-ivory">
-              Facebook
-            </a>
-          </div>
+          {socials.length > 0 && (
+            <>
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-champagne">{dict.footer.followUs}</p>
+              <div className="mt-4 flex gap-4 text-sm text-stone">
+                {socials.map((s) => (
+                  <a key={s.label} href={s.href} target="_blank" rel="noreferrer" className="hover:text-ivory">
+                    {s.label}
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </Container>
 
       <div className="border-t border-platinum/10 py-6">
-        <Container className="flex flex-col items-center justify-between gap-2 text-xs text-stone md:flex-row">
+        <Container className="flex flex-col items-center justify-between gap-3 text-xs text-stone md:flex-row">
           <p>
-            © {new Date().getFullYear()} {siteConfig.legalName}. {dict.footer.rights}
+            © {new Date().getFullYear()} {contact.name}. {dict.footer.rights}
           </p>
+          <AdminAccessIcon />
         </Container>
       </div>
     </footer>

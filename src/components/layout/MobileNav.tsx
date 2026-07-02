@@ -4,7 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-export function MobileNav({ links }: { links: { href: string; label: string }[] }) {
+export function MobileNav({
+  links,
+  accountLink,
+}: {
+  links: { href: string; label: string }[];
+  accountLink?: { href: string; label: string };
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -26,6 +32,15 @@ export function MobileNav({ links }: { links: { href: string; label: string }[] 
                 {link.label}
               </Link>
             ))}
+            {accountLink && (
+              <Link
+                href={accountLink.href}
+                onClick={() => setOpen(false)}
+                className="mt-2 border-t border-platinum/10 pt-4 text-sm font-medium uppercase tracking-[0.15em] text-stone hover:text-champagne"
+              >
+                {accountLink.label}
+              </Link>
+            )}
           </nav>
         </div>
       )}

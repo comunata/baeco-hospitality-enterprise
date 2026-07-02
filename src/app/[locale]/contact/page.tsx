@@ -4,13 +4,14 @@ import { getDictionary } from "@/lib/i18n";
 import { PageHeader } from "@/components/pages/PageHeader";
 import { Section } from "@/components/ui/Section";
 import { ContactForm } from "@/components/contact/ContactForm";
-import { siteConfig } from "@/config/site";
+import { getPropertyContactInfo } from "@/lib/data/property";
 
 export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   if (!isLocale(rawLocale)) notFound();
   const locale = rawLocale as Locale;
   const dict = getDictionary(locale);
+  const contact = await getPropertyContactInfo();
 
   return (
     <>
@@ -21,12 +22,12 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
           <div className="space-y-6 text-sm text-stone">
             <div>
               <p className="text-xs uppercase tracking-widest text-champagne">{dict.footer.contact}</p>
-              <p className="mt-2 text-ivory">{siteConfig.contact.address}</p>
-              <p className="mt-1">{siteConfig.contact.phone}</p>
-              <p className="mt-1">{siteConfig.contact.email}</p>
+              <p className="mt-2 text-ivory">{contact.address}</p>
+              <p className="mt-1">{contact.phone}</p>
+              <p className="mt-1">{contact.email}</p>
             </div>
             <a
-              href={`https://wa.me/${siteConfig.contact.whatsapp}`}
+              href={`https://wa.me/${contact.whatsapp}`}
               target="_blank"
               rel="noreferrer"
               className="inline-block rounded-sm border border-emerald/40 px-6 py-3 text-xs font-medium uppercase tracking-widest text-emerald hover:bg-emerald/10"
@@ -38,7 +39,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                 title="map"
                 className="h-full w-full"
                 loading="lazy"
-                src={`https://www.google.com/maps?q=${siteConfig.contact.lat},${siteConfig.contact.lng}&z=14&output=embed`}
+                src={`https://www.google.com/maps?q=${contact.lat},${contact.lng}&z=14&output=embed`}
               />
             </div>
           </div>

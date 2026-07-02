@@ -18,6 +18,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { JsonLd, lodgingBusinessJsonLd } from "@/components/seo/JsonLd";
 import { siteConfig } from "@/config/site";
+import { getPropertyContactInfo } from "@/lib/data/property";
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
@@ -25,7 +26,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const locale = rawLocale as Locale;
   const dict = getDictionary(locale);
 
-  const [rooms, offers, reviews, attractions] = await Promise.all([getRooms(), getOffers(), getReviews(), getAttractions()]);
+  const [rooms, offers, reviews, attractions, contact] = await Promise.all([
+    getRooms(),
+    getOffers(),
+    getReviews(),
+    getAttractions(),
+    getPropertyContactInfo(),
+  ]);
 
   return (
     <>
@@ -34,10 +41,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           name: siteConfig.name,
           description: dict.seo.defaultDescription,
           url: `${siteConfig.domain}/${locale}`,
-          telephone: siteConfig.contact.phone,
-          address: siteConfig.contact.address,
-          lat: siteConfig.contact.lat,
-          lng: siteConfig.contact.lng,
+          telephone: contact.phone,
+          address: contact.address,
+          lat: contact.lat,
+          lng: contact.lng,
         })}
       />
       <Hero locale={locale} dict={dict} />

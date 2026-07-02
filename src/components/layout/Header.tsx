@@ -34,13 +34,23 @@ export function Header({ locale, dict }: { locale: Locale; dict: Dictionary }) {
         </nav>
 
         <div className="hidden items-center gap-5 md:flex">
+          <Link
+            href="/portal"
+            className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.15em] text-stone transition-colors hover:text-champagne"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+              <circle cx="12" cy="8" r="3.25" />
+              <path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" strokeLinecap="round" />
+            </svg>
+            {dict.nav.portal}
+          </Link>
           <LocaleSwitcher current={locale} />
           <LinkButton href={`/${locale}/booking`} className="text-xs px-5 py-2.5">
             {dict.common.bookNow}
           </LinkButton>
         </div>
 
-        <MobileNav links={links} />
+        <MobileNav links={links} accountLink={{ href: "/portal", label: dict.nav.portal }} />
       </Container>
     </header>
   );
