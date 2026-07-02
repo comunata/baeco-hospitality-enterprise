@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isUuid } from "@/lib/utils";
 import { seedRooms } from "./seed/rooms";
 import type { LocalizedText, Room } from "@/lib/types";
 
@@ -153,13 +154,42 @@ export async function createRoom(room: Room): Promise<Room> {
   return room;
 }
 
+/**
+ * Resolves a possibly-fake seed id (e.g. "room-deluxe-garden") to the real
+ * uuid of the matching row in `rooms`, via its unique `slug` column — same
+ * pattern as resolveServiceUuid in lib/data/services.ts. Returns the id
+ * unchanged if it's already a real uuid, or null if the id is fake and no
+ * row with that slug has been persisted yet. Exported so lib/data/seasons.ts
+ * can resolve the room side of a room_rates upsert the same way.
+ */
+export async function resolveRoomUuid(admin: NonNullable<ReturnType<typeof createAdminClient>>, id: string): Promise<string | null> {
+  if (isUuid(id)) return id;
+  const slug = seedRooms.find((r) => r.id === id)?.slug ?? memoryRooms.find((r) => r.id === id)?.slug;
+  if (!slug) return null;
+  const { data, error } = await admin.from("rooms").select("id").eq("slug", slug).maybeSingle();
+  if (error || !data) return null;
+  return data.id as string;
+}
+
 export async function updateRoom(id: string, patch: Partial<Room>): Promise<Room | undefined> {
   if (isSupabaseConfigured()) {
     const admin = createAdminClient();
     if (admin) {
-      const { data, error } = await admin.from("rooms").update(toRow(patch)).eq("id", id).select().maybeSingle();
-      if (!error && data) return fromRow(data as RoomRow);
-      if (error) throw new Error(error.message);
+      const realId = await resolveRoomUuid(admin, id);
+      if (realId) {
+        const { data, error } = await admin.from("rooms").update(toRow(patch)).eq("id", realId).select().maybeSingle();
+        if (!error && data) return fromRow(data as RoomRow);
+        if (error) throw new Error(error.message);
+      } else {
+        // No row has ever been persisted for this (seed-only) room —
+        // editing it is its first real save, so insert instead of update.
+        const base = seedRooms.find((r) => r.id === id) ?? memoryRooms.find((r) => r.id === id);
+        if (!base) return undefined;
+        const merged: Room = { ...base, ...patch };
+        const { data, error } = await admin.from("rooms").insert(toRow(merged)).select().single();
+        if (!error && data) return fromRow(data as RoomRow);
+        if (error) throw new Error(error.message);
+      }
     }
   }
   const room = memoryRooms.find((r) => r.id === id);

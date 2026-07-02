@@ -2,6 +2,8 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isUuid } from "@/lib/utils";
+import { resolveRoomUuid } from "./rooms";
 import { seedSeasons } from "./seed/seasons";
 import type { Season } from "@/lib/types";
 
@@ -72,13 +74,41 @@ export async function createSeason(season: Season): Promise<Season> {
   return season;
 }
 
+/**
+ * The `seasons` table (unlike rooms/services) has no unique slug-style
+ * column to resolve a fake seed id ("season-low") against, so a non-uuid
+ * id can only mean one thing: this season has never been persisted (the
+ * `seasons` table is currently empty, so getSeasons() is still serving the
+ * seed/demo fallback). Persisting it (via patch, or the seed data
+ * unchanged) is therefore its first real save. Returns the real uuid.
+ * Exported so setRoomRateOverride can resolve the season side of a
+ * room_rates upsert the same way.
+ */
+export async function ensureSeasonUuid(admin: NonNullable<ReturnType<typeof createAdminClient>>, id: string, patch: Partial<Season> = {}): Promise<string | null> {
+  if (isUuid(id)) return id;
+  const base = seedSeasons.find((s) => s.id === id) ?? memorySeasons.find((s) => s.id === id);
+  if (!base) return null;
+  const merged: Season = { ...base, ...patch };
+  const { data, error } = await admin.from("seasons").insert(toRow(merged)).select("id").single();
+  if (error || !data) return null;
+  return data.id as string;
+}
+
 export async function updateSeason(id: string, patch: Partial<Season>): Promise<Season | undefined> {
   if (isSupabaseConfigured()) {
     const admin = createAdminClient();
     if (admin) {
-      const { data, error } = await admin.from("seasons").update(toRow(patch)).eq("id", id).select().maybeSingle();
-      if (!error && data) return fromRow(data as SeasonRow);
-      if (error) throw new Error(error.message);
+      if (isUuid(id)) {
+        const { data, error } = await admin.from("seasons").update(toRow(patch)).eq("id", id).select().maybeSingle();
+        if (!error && data) return fromRow(data as SeasonRow);
+        if (error) throw new Error(error.message);
+      } else {
+        const realId = await ensureSeasonUuid(admin, id, patch);
+        if (!realId) return undefined;
+        const { data, error } = await admin.from("seasons").select("*").eq("id", realId).maybeSingle();
+        if (!error && data) return fromRow(data as SeasonRow);
+        if (error) throw new Error(error.message);
+      }
     }
   }
   const season = memorySeasons.find((s) => s.id === id);
@@ -90,8 +120,14 @@ export async function deleteSeason(id: string): Promise<void> {
   if (isSupabaseConfigured()) {
     const admin = createAdminClient();
     if (admin) {
-      const { error } = await admin.from("seasons").delete().eq("id", id);
-      if (error) throw new Error(error.message);
+      // A non-uuid id was never persisted (see updateSeason) — nothing to
+      // delete in the DB; only clear it from the in-memory fallback below.
+      if (isUuid(id)) {
+        const { error } = await admin.from("seasons").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+      }
+      const idx = memorySeasons.findIndex((s) => s.id === id);
+      if (idx >= 0) memorySeasons.splice(idx, 1);
       return;
     }
   }
@@ -131,9 +167,18 @@ export async function setRoomRateOverride(roomId: string, seasonId: string, over
   if (isSupabaseConfigured()) {
     const admin = createAdminClient();
     if (admin) {
+      // Both room_id and season_id are uuid FKs (room_rates table). The
+      // Rates admin page combines rooms with seasons that may still be
+      // seed/demo fallback data (fake ids like "season-low") if their
+      // table is empty — resolve/auto-persist both sides first, or the
+      // upsert fails with "invalid input syntax for type uuid".
+      const [realRoomId, realSeasonId] = await Promise.all([resolveRoomUuid(admin, roomId), ensureSeasonUuid(admin, seasonId)]);
+      if (!realRoomId || !realSeasonId) {
+        throw new Error("room_or_season_not_found");
+      }
       const { error } = await admin
         .from("room_rates")
-        .upsert({ room_id: roomId, season_id: seasonId, override_price: overridePrice }, { onConflict: "room_id,season_id" });
+        .upsert({ room_id: realRoomId, season_id: realSeasonId, override_price: overridePrice }, { onConflict: "room_id,season_id" });
       if (error) throw new Error(error.message);
       return;
     }

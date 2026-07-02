@@ -2,21 +2,11 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isUuid } from "@/lib/utils";
 import { seedServices } from "./seed/services";
 import type { ExtraService, LocalizedText } from "@/lib/types";
 
 const memoryServices: ExtraService[] = [...seedServices];
-
-// The `services.id` column is a Postgres uuid (see supabase/migrations/
-// 0001_init.sql), but the seed/demo fallback data below identifies each
-// service with a fixed slug-shaped string (e.g. "svc-dinner") so it works
-// without a database. When the admin UI is showing that fallback data —
-// because the live `services` table has no rows yet, or hasn't been seeded
-// — its "id" is never a real UUID, so it must never be sent straight into
-// a `.eq("id", …)` query (Postgres rejects it with "invalid input syntax
-// for type uuid"). uuidPattern lets update/delete tell the two apart and
-// resolve a non-UUID id to its real row via `slug` first.
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // snake_case DB row ↔ camelCase app type (see note in lib/data/rooms.ts).
 interface ServiceRow {
@@ -122,7 +112,7 @@ export async function createService(service: ExtraService): Promise<ExtraService
  * i.e. this service has never actually been persisted.
  */
 async function resolveServiceUuid(admin: NonNullable<ReturnType<typeof createAdminClient>>, id: string): Promise<string | null> {
-  if (uuidPattern.test(id)) return id;
+  if (isUuid(id)) return id;
   const slug = seedServices.find((s) => s.id === id)?.slug ?? memoryServices.find((s) => s.id === id)?.slug;
   if (!slug) return null;
   const { data, error } = await admin.from("services").select("id").eq("slug", slug).maybeSingle();
