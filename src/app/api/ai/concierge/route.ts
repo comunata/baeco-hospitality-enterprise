@@ -5,7 +5,7 @@ import { getRooms } from "@/lib/data/rooms";
 import { buildAiAreaContext } from "@/lib/intelligence/planner";
 import { getBookingsForGuestEmail } from "@/lib/data/bookings";
 import { getPortalSession } from "@/lib/portal/session";
-import { completeChat } from "@/lib/integrations/ai";
+import { completeChatDetailed, isAiConfigured } from "@/lib/integrations/ai";
 import { getDictionary } from "@/lib/i18n";
 import { isLocale, defaultLocale } from "@/lib/i18n/config";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -91,8 +91,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (await import("@/lib/integrations/ai").then((m) => m.isAiConfigured())) {
-    const answer = await completeChat([
+  let engineReason: string | undefined;
+  if (await isAiConfigured()) {
+    const result = await completeChatDetailed([
       {
         role: "system",
         content: `You are the AI Concierge for ${dict.common.brand}, a luxury hospitality property. Answer ONLY using the facts provided below. Reply in ${locale === "ro" ? "Romanian" : "English"}. Never invent information not present in the facts. If the facts don't answer the question, say so plainly.\n\nFacts:\n${groundingFacts.join("\n\n")}`,
@@ -100,9 +101,12 @@ export async function POST(request: NextRequest) {
       ...history.map((h) => ({ role: h.role, content: h.content })),
       { role: "user", content: question },
     ]);
-    if (answer) return NextResponse.json({ answer, handoff: false, engine: "openai" });
+    if (result.content) return NextResponse.json({ answer: result.content, handoff: false, engine: "openai" });
+    engineReason = result.reason;
+  } else {
+    engineReason = "no_api_key";
   }
 
   const fallbackAnswer = bestMatch ? bestMatch.answer[locale] ?? bestMatch.answer.en : groundingFacts[0];
-  return NextResponse.json({ answer: fallbackAnswer, handoff: false, engine: "rules" });
+  return NextResponse.json({ answer: fallbackAnswer, handoff: false, engine: "rules", engineReason });
 }

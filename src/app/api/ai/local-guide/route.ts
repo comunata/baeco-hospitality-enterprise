@@ -7,7 +7,7 @@ import { buildDestinationAnswer, buildDestinationCards } from "@/lib/destination
 import { destinationBase, destinationPlaces } from "@/lib/data/destination";
 import { buildStayPlan, buildDiningGuide, buildPersonaGuide, buildAiAreaContext, hasApprovedKnowledge, type ItineraryDays, type StayPlan } from "@/lib/intelligence/planner";
 import { googleMapsPlaceLink } from "@/lib/discovery/engine";
-import { completeChat, isAiConfigured } from "@/lib/integrations/ai";
+import { completeChatDetailed, isAiConfigured, type AiFailureReason } from "@/lib/integrations/ai";
 import type { Persona } from "@/lib/discovery/types";
 
 const requestSchema = z.object({
@@ -102,10 +102,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Preferred path: real LLM answer grounded in approved/curated facts —
-    // every question gets its own answer, in natural language.
+    // every question gets its own answer, in natural language. When the API
+    // call fails, the failure reason is surfaced as `engineReason` on the
+    // deterministic fallback response (and logged server-side).
+    let engineReason: AiFailureReason | undefined;
     if (await isAiConfigured()) {
       const facts = await buildGroundingFacts(locale);
-      const answer = await completeChat([
+      const result = await completeChatDetailed([
         {
           role: "system",
           content:
@@ -116,10 +119,12 @@ export async function POST(request: NextRequest) {
         },
         { role: "user", content: question },
       ]);
-      if (answer) {
-        return NextResponse.json({ answer, itinerary: isItineraryRequest, routeCards, engine: "openai" });
+      if (result.content) {
+        return NextResponse.json({ answer: result.content, itinerary: isItineraryRequest, routeCards, engine: "openai" });
       }
-      // fall through to deterministic answers if the API call failed
+      engineReason = result.reason;
+    } else {
+      engineReason = "no_api_key";
     }
 
     // Deterministic fallback (no API key / API error): intent-based answers.
@@ -132,6 +137,7 @@ export async function POST(request: NextRequest) {
             answer: [locale === "ro" ? "Recomandările noastre gastronomice din zonă:" : "Our dining recommendations in the area:", ...lines].join("\n"),
             itinerary: false,
             engine: "rules",
+            engineReason,
           });
         }
       }
@@ -143,6 +149,7 @@ export async function POST(request: NextRequest) {
             answer: [locale === "ro" ? "Recomandări potrivite pentru voi:" : "Recommendations suited for you:", ...lines].join("\n"),
             itinerary: false,
             engine: "rules",
+            engineReason,
           });
         }
       }
@@ -155,6 +162,7 @@ export async function POST(request: NextRequest) {
           itinerary: true,
           routeCards,
           engine: "rules",
+          engineReason,
         });
       }
     }
@@ -165,6 +173,7 @@ export async function POST(request: NextRequest) {
       itinerary: isItineraryRequest,
       routeCards,
       engine: "rules",
+      engineReason,
     });
   } catch {
     return NextResponse.json({ answer: dict.errors.generic, itinerary: false, engine: "rules" });
