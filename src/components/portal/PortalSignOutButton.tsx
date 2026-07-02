@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import type { Dictionary } from "@/lib/i18n";
 
 export function PortalSignOutButton({ dict }: { dict: Dictionary }) {
@@ -10,11 +9,9 @@ export function PortalSignOutButton({ dict }: { dict: Dictionary }) {
   const [loading, setLoading] = useState(false);
 
   async function signOut() {
-    const supabase = createClient();
-    if (!supabase) return;
     setLoading(true);
     try {
-      await supabase.auth.signOut();
+      await fetch("/api/portal/logout", { method: "POST" });
       router.refresh();
     } finally {
       setLoading(false);

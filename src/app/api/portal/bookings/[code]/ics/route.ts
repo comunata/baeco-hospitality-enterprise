@@ -10,12 +10,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!booking) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   // Authorization: booking codes are guessable/enumerable, so — exactly like
-  // the PATCH route and the portal detail page — we require the caller to be
-  // an authenticated portal session whose email matches the booking's guest
-  // email. Without this check any caller could download another guest's
-  // calendar invite (name, dates, room) by code alone (IDOR).
+  // the PATCH route and the portal detail page — we require the caller to
+  // hold a portal session scoped to this exact booking. Without this check
+  // any caller could download another guest's calendar invite (name,
+  // dates, room) by code alone (IDOR).
   const session = await getPortalSession();
-  if (!session.authenticated || session.email.toLowerCase() !== booking.guest.email.toLowerCase()) {
+  if (!session.authenticated || session.bookingCode !== booking.code) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 

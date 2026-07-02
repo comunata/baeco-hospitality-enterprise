@@ -9,6 +9,7 @@ import type { Room, ExtraService, PriceBreakdown } from "@/lib/types";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { DateRangePicker } from "@/components/ui/DateRangePicker";
+import { renderTemplate } from "@/lib/i18n/template";
 
 type Step = "room" | "details" | "confirmed";
 
@@ -31,6 +32,36 @@ interface RoomQuote {
   breakdown: PriceBreakdown;
   available: boolean;
   unitsLeft?: number;
+}
+
+/** Maps the API's distinct error codes to a specific, correctly-worded
+ * message — only "room_unavailable" (an actual failed availability check)
+ * maps to dict.errors.roomUnavailable; every other failure gets its own
+ * message instead of falling through to that one. Module-level (not a
+ * component-scoped closure) so it can be used directly inside the debounced
+ * quote effect without becoming an extra hook dependency. */
+function mapBookingError(code: string, dict: Dictionary): string {
+  if (code.startsWith("min_nights_")) {
+    return renderTemplate(dict.errors.minNights, { nights: code.split("_")[2] ?? "" });
+  }
+  switch (code) {
+    case "invalid_dates":
+      return dict.errors.invalidDates;
+    case "room_unavailable":
+      return dict.errors.roomUnavailable;
+    case "capacity_exceeded":
+      return dict.errors.capacityExceeded;
+    case "promo_invalid":
+      return dict.errors.invalidPromoCode;
+    case "voucher_invalid":
+      return dict.errors.invalidVoucher;
+    case "room_not_found":
+      return dict.errors.missingRoom;
+    case "rate_limited":
+      return dict.errors.rateLimited;
+    default:
+      return dict.errors.generic;
+  }
 }
 
 export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale; dict: Dictionary; rooms: Room[]; services: ExtraService[] }) {
@@ -99,20 +130,44 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
         )
       )
         .then(setQuotes)
-        .catch(() => {
+        .catch((err: unknown) => {
           setQuotes(null);
-          setQuoteError(dict.errors.generic);
+          setQuoteError(mapBookingError(err instanceof Error ? err.message : "generic", dict));
         })
         .finally(() => setQuoting(false));
     }, 400);
     return () => clearTimeout(timeout);
   }, [selectedRoom, datesInvalid, checkIn, checkOut, adults, children, childAges, selectedExtras, promoCode, voucherCode, extraRooms, dict]);
 
-  const grandTotal = useMemo(() => (quotes ? quotes.reduce((sum, q) => sum + q.breakdown.total, 0) : 0), [quotes]);
-  const someUnavailable = useMemo(() => Boolean(quotes?.some((q) => !q.available)), [quotes]);
+  // A quote fetched for a previously-valid date range must stop being
+  // treated as current the moment the dates become invalid — derived here
+  // (not cleared via setState inside the effect above) so the confirm
+  // button can't stay enabled on stale pricing.
+  const effectiveQuotes = datesInvalid ? null : quotes;
+  const grandTotal = useMemo(() => (effectiveQuotes ? effectiveQuotes.reduce((sum, q) => sum + q.breakdown.total, 0) : 0), [effectiveQuotes]);
+  const someUnavailable = useMemo(() => Boolean(effectiveQuotes?.some((q) => !q.available)), [effectiveQuotes]);
+
+  /** Client-side form validation, checked before the API is even called —
+   * kept separate from server-side availability/booking errors below so
+   * "completează emailul" never gets confused with "camera nu mai este
+   * disponibilă". */
+  function validateForm(): string | null {
+    if (!selectedRoom) return dict.errors.missingRoom;
+    if (datesInvalid) return dict.errors.invalidDates;
+    if (!guest.firstName.trim()) return dict.errors.missingFirstName;
+    if (!guest.lastName.trim()) return dict.errors.missingLastName;
+    if (!guest.email.trim()) return dict.errors.missingEmail;
+    if (!guest.phone.trim()) return dict.errors.missingPhone;
+    return null;
+  }
 
   async function confirmBooking() {
     if (!selectedRoom) return;
+    const validationError = validateForm();
+    if (validationError) {
+      setSubmitError(validationError);
+      return;
+    }
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -144,8 +199,8 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
         currency: data.booking?.totals?.currency,
       });
       setStep("confirmed");
-    } catch {
-      setSubmitError(dict.errors.roomUnavailable);
+    } catch (err) {
+      setSubmitError(mapBookingError(err instanceof Error ? err.message : "generic", dict));
     } finally {
       setSubmitting(false);
     }
@@ -410,13 +465,13 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
             <h3 className="font-display text-xl text-ivory">{dict.booking.summary}</h3>
             {(datesInvalid || quoteError) && <p className="mt-4 text-sm text-red-400">{datesInvalid ? dict.errors.invalidDates : quoteError}</p>}
             {someUnavailable && <p className="mt-4 text-sm text-red-400">{dict.errors.roomUnavailable}</p>}
-            {quotes && (
+            {effectiveQuotes && (
               <div className="mt-4 space-y-4 text-sm">
-                {quotes.map((roomQuote, roomIndex) => {
+                {effectiveQuotes.map((roomQuote, roomIndex) => {
                   const room = roomIndex === 0 ? selectedRoom : rooms.find((r) => r.slug === extraRooms[roomIndex - 1]?.slug);
                   return (
-                    <div key={roomIndex} className={cn(quotes.length > 1 && "border-b border-platinum/10 pb-3")}>
-                      {quotes.length > 1 && (
+                    <div key={roomIndex} className={cn(effectiveQuotes.length > 1 && "border-b border-platinum/10 pb-3")}>
+                      {effectiveQuotes.length > 1 && (
                         <p className="mb-2 text-[11px] uppercase tracking-wider text-champagne">{room?.name[locale] ?? room?.name.en}</p>
                       )}
                       {roomQuote.breakdown.lines.map((line, i) => (
@@ -435,7 +490,7 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
                 })}
                 <div className="flex justify-between border-t border-platinum/10 pt-3 font-display text-lg text-champagne">
                   <span>{dict.common.total}</span>
-                  <span>{formatCurrency(grandTotal, quotes[0].breakdown.currency)}</span>
+                  <span>{formatCurrency(grandTotal, effectiveQuotes[0].breakdown.currency)}</span>
                 </div>
               </div>
             )}
@@ -443,7 +498,7 @@ export function BookingFlow({ locale, dict, rooms, services }: { locale: Locale;
 
             <button
               onClick={confirmBooking}
-              disabled={submitting || !quotes || someUnavailable || !guest.firstName || !guest.email}
+              disabled={submitting || !effectiveQuotes || someUnavailable}
               className="mt-6 w-full rounded-sm bg-champagne px-6 py-3.5 text-xs font-medium uppercase tracking-[0.15em] text-midnight disabled:opacity-50"
             >
               {submitting ? dict.common.loading : dict.booking.confirmBooking}

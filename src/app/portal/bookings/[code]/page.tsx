@@ -3,6 +3,7 @@ import { getServerDictionary } from "@/lib/i18n/server";
 import { getPortalSession } from "@/lib/portal/session";
 import { getBookingByCode, canCancelFreely } from "@/lib/data/bookings";
 import { getRoomBySlug, getRooms } from "@/lib/data/rooms";
+import { getPropertyContactInfo } from "@/lib/data/property";
 import { StatusBadge } from "@/components/admin/AdminTable";
 import { BookingDetailClient } from "@/components/portal/BookingDetailClient";
 import { OnlineCheckInCard } from "@/components/portal/OnlineCheckInCard";
@@ -14,12 +15,12 @@ export default async function PortalBookingDetailPage({ params }: { params: Prom
   const { dict, locale } = await getServerDictionary();
   const session = await getPortalSession();
   const booking = await getBookingByCode(code);
-  // Only the guest owning the booking may view its details/invoice — the
-  // portal layout already guarantees `session.authenticated`, but the code
-  // in the URL is guessable, so we still enforce email ownership here.
-  if (!booking || booking.guest.email.toLowerCase() !== session.email.toLowerCase()) notFound();
+  // The session is scoped to exactly one booking (no accounts, no email-
+  // based lookup) — the code in the URL is guessable, so this is the only
+  // check that actually gates access, not just a display convenience.
+  if (!booking || booking.code !== session.bookingCode) notFound();
 
-  const rooms = await getRooms();
+  const [rooms, property] = await Promise.all([getRooms(), getPropertyContactInfo()]);
   const room = rooms.find((r) => r.id === booking.roomId) ?? (await getRoomBySlug(booking.roomId));
 
   return (
@@ -64,6 +65,16 @@ export default async function PortalBookingDetailPage({ params }: { params: Prom
             <span>{dict.common.total}</span>
             <span>{formatCurrency(booking.totals.total, booking.totals.currency)}</span>
           </div>
+        </div>
+
+        <h2 className="mt-8 font-display text-xl text-ivory">{property.name}</h2>
+        <div className="mt-4 space-y-1 rounded-sm border border-platinum/15 bg-graphite p-6 text-sm text-stone">
+          <p>{property.address}</p>
+          <p>{property.phone}</p>
+          <p>{property.email}</p>
+          <p className="mt-2 text-[11px] uppercase tracking-widest text-champagne">
+            {dict.footer.checkIn} {property.checkIn} · {dict.footer.checkOut} {property.checkOut}
+          </p>
         </div>
       </aside>
     </div>
