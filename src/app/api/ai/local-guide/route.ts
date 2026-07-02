@@ -4,11 +4,12 @@ import { getDictionary } from "@/lib/i18n";
 import { isLocale, defaultLocale, type Locale } from "@/lib/i18n/config";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { isModuleEnabledRuntime } from "@/lib/data/settings";
-import { buildDestinationAnswer, buildDestinationCards } from "@/lib/destination-planner";
+import { buildDestinationAnswer, buildDestinationCards, buildGenericAreaAnswer } from "@/lib/destination-planner";
 import { destinationBase, destinationPlaces } from "@/lib/data/destination";
 import { buildStayPlan, buildDiningGuide, buildPersonaGuide, buildAiAreaContext, hasApprovedKnowledge, type ItineraryDays, type StayPlan } from "@/lib/intelligence/planner";
 import { googleMapsPlaceLink } from "@/lib/discovery/engine";
 import { completeChatDetailed, isAiConfigured, type AiFailureReason } from "@/lib/integrations/ai";
+import { getPropertyContactInfo } from "@/lib/data/property";
 import type { Persona } from "@/lib/discovery/types";
 
 const requestSchema = z.object({
@@ -60,17 +61,26 @@ function planToRouteCards(plan: StayPlan, locale: Locale) {
 
 /**
  * Grounding facts for the LLM: the admin-approved knowledge base when it
- * exists, otherwise the curated destination seed data. The model rephrases
- * and selects from these facts — it never invents places.
+ * exists, otherwise the curated destination seed data (only valid while the
+ * property's configured location is still the seed's default area — Gura
+ * Humorului/Bucovina). For any other admin-configured location without an
+ * approved knowledge base yet, we hand the model an honest, location-aware
+ * instruction instead of unrelated Bucovina place names — it never invents
+ * places.
  */
-async function buildGroundingFacts(locale: Locale): Promise<string> {
+async function buildGroundingFacts(locale: Locale, areaLabel: string, isDefaultArea: boolean): Promise<string> {
   const approved = await buildAiAreaContext(locale);
   if (approved) return approved;
-  const lang = locale === "ro" ? "ro" : "en";
-  const lines = destinationPlaces.map(
-    (p) => `- ${p.name[lang] ?? p.name.en} (${p.distanceKm} km / ${p.driveMinutes} min, ~${p.visitMinutes} min visit): ${p.description[lang] ?? p.description.en}`
-  );
-  return `${destinationBase.name}:\n${lines.join("\n")}`;
+  if (isDefaultArea) {
+    const lang = locale === "ro" ? "ro" : "en";
+    const lines = destinationPlaces.map(
+      (p) => `- ${p.name[lang] ?? p.name.en} (${p.distanceKm} km / ${p.driveMinutes} min, ~${p.visitMinutes} min visit): ${p.description[lang] ?? p.description.en}`
+    );
+    return `${areaLabel}:\n${lines.join("\n")}`;
+  }
+  return locale === "ro"
+    ? `Proprietatea este situată în ${areaLabel}. Nu există încă un ghid local aprobat pentru această zonă. Fii util și oferă sfaturi generale de vizitare (obiective centrale, tipuri de restaurante, activități pentru familii, ce faci pe vreme de ploaie) fără să inventezi nume de locuri, adrese sau programe specifice — recomandă oaspetelui să confirme detaliile exacte la recepție.`
+    : `The property is located in ${areaLabel}. There is no approved local guide for this area yet. Be helpful with general visiting advice (central attractions, restaurant types, family activities, rainy-day options) without inventing specific place names, addresses or schedules — invite the guest to confirm exact details at reception.`;
 }
 
 export async function POST(request: NextRequest) {
@@ -92,18 +102,23 @@ export async function POST(request: NextRequest) {
   const wantsCards = isItineraryRequest || /(vizita|visit|copii|kids|ploua|rain|manc|eat|restaurant|traseu|route)/.test(q);
 
   try {
-    const knowledgeApproved = await hasApprovedKnowledge();
+    const [knowledgeApproved, contact] = await Promise.all([hasApprovedKnowledge(), getPropertyContactInfo()]);
+    const areaLabel = contact.areaLabel || destinationBase.name;
+    const normalizedLocality = normalize(`${contact.locality} ${contact.address}`);
+    const isDefaultArea = !contact.locality || normalizedLocality.includes("gura humorului");
     const persona = detectPersona(q);
 
     // Structured itinerary cards stay deterministic (times, distances, maps
-    // links) regardless of whether the LLM phrases the text answer.
+    // links) regardless of whether the LLM phrases the text answer. The
+    // curated Bucovina route cards only make sense while the property is
+    // still configured for that default area.
     let routeCards: ReturnType<typeof planToRouteCards> | ReturnType<typeof buildDestinationCards> | undefined;
     if (wantsCards) {
       if (knowledgeApproved) {
         const plan = await buildStayPlan(requestedDays(q), persona);
         if (plan.days.length > 0) routeCards = planToRouteCards(plan, locale).slice(0, 3);
       }
-      if (!routeCards) routeCards = buildDestinationCards(locale).slice(0, isItineraryRequest ? 3 : 2);
+      if (!routeCards && isDefaultArea) routeCards = buildDestinationCards(locale).slice(0, isItineraryRequest ? 3 : 2);
     }
 
     // Preferred path: real LLM answer grounded in approved/curated facts —
@@ -112,15 +127,15 @@ export async function POST(request: NextRequest) {
     // deterministic fallback response (and logged server-side).
     let engineReason: AiFailureReason | undefined;
     if (await isAiConfigured()) {
-      const facts = await buildGroundingFacts(locale);
+      const facts = await buildGroundingFacts(locale, areaLabel, isDefaultArea);
       const result = await completeChatDetailed([
         {
           role: "system",
           content:
-            `You are the AI Local Guide of ${dict.common.brand}, a premium hospitality property. ` +
-            `Answer the guest's question directly and specifically, in ${locale === "ro" ? "Romanian" : "English"}, in a warm, concierge tone. ` +
+            `You are the AI Local Guide of ${dict.common.brand}, a premium hospitality property located in ${areaLabel}. ` +
+            `Answer the guest's question directly and specifically, in ${locale === "ro" ? "Romanian" : "English"}, in a warm, concierge tone. Always give a useful answer — never reply with a bare "no information" message. ` +
             `Recommend ONLY places from the facts below (with distances/times when useful). Never invent places, prices or schedules not present in the facts. ` +
-            `If the facts don't cover the question, say so and suggest asking the reception.\n\nFacts:\n${facts}`,
+            `If the facts don't name a specific place for the question, still help with general, honest guidance and suggest confirming exact details at reception.\n\nFacts:\n${facts}`,
         },
         { role: "user", content: question },
       ]);
@@ -172,9 +187,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const destination = buildDestinationAnswer(question, locale);
+    const fallbackAnswer = isDefaultArea ? buildDestinationAnswer(question, locale, areaLabel).answer : buildGenericAreaAnswer(question, locale, areaLabel);
     return NextResponse.json({
-      answer: destination.answer || dict.ai.concierge.handoffText,
+      answer: fallbackAnswer,
       itinerary: isItineraryRequest,
       routeCards,
       engine: "rules",

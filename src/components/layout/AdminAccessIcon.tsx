@@ -33,7 +33,7 @@ export function AdminAccessIcon() {
       href="/admin"
       aria-label={isStaff ? "Admin" : "Acces administrare"}
       title={isStaff ? "Admin" : undefined}
-      className="group flex h-6 w-6 items-center justify-center rounded-full text-stone/40 opacity-60 transition-all duration-300 hover:text-champagne hover:opacity-100 md:opacity-30 md:hover:opacity-100"
+      className="group flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-stone/50 opacity-75 transition-all duration-300 hover:text-champagne hover:opacity-100 hover:drop-shadow-[0_0_6px_rgba(212,175,110,0.55)]"
     >
       {isStaff ? (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
@@ -41,7 +41,7 @@ export function AdminAccessIcon() {
           <path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" strokeLinecap="round" />
         </svg>
       ) : (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3.5 w-3.5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
           <rect x="5.5" y="10.5" width="13" height="9" rx="1.5" />
           <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" strokeLinecap="round" />
         </svg>

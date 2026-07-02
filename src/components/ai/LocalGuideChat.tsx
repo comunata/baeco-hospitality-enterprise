@@ -27,7 +27,18 @@ type Message = {
   routeCards?: RouteCard[];
 };
 
-export function LocalGuideChat({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export function LocalGuideChat({
+  locale,
+  dict,
+  title,
+  subtitle,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+  /** Optional heading overrides for the call site (e.g. the Explore page uses a generic title). */
+  title?: string;
+  subtitle?: string;
+}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -64,11 +75,12 @@ export function LocalGuideChat({ locale, dict }: { locale: Locale; dict: Diction
       <div className="flex flex-col gap-4 md:flex-row md:items-center">
         <AiAvatar kind="localGuide" size={72} />
         <div>
-          <p className="font-display text-3xl text-ivory">{dict.ai.localGuide.title}</p>
+          <p className="font-display text-3xl text-ivory">{title ?? dict.ai.localGuide.title}</p>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-stone">
-            {isRo
-              ? "Ghidul local AI recomandă obiective, restaurante și rute vizuale în Bucovina, cu distanțe și navigare Google Maps."
-              : "The AI local guide recommends attractions, restaurants and visual Bucovina routes, with distances and Google Maps navigation."}
+            {subtitle ??
+              (isRo
+                ? "Ghidul local AI recomandă obiective, restaurante și rute vizuale în zonă, cu distanțe și navigare Google Maps."
+                : "The AI local guide recommends attractions, restaurants and visual routes in the area, with distances and Google Maps navigation.")}
           </p>
         </div>
       </div>

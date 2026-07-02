@@ -214,6 +214,19 @@ export default async function ExplorePage({ params }: { params: Promise<{ locale
         </div>
 
         <div className="mb-20">
+          <LocalGuideChat
+            locale={locale}
+            dict={dict}
+            title={locale === "ro" ? "Ghid local AI" : "Local AI Guide"}
+            subtitle={
+              locale === "ro"
+                ? "Primește recomandări pentru zona din jurul proprietății."
+                : "Get recommendations for the area around the property."
+            }
+          />
+        </div>
+
+        <div className="mb-20">
           <DestinationExpertPanel locale={locale} />
         </div>
 
@@ -238,10 +251,6 @@ export default async function ExplorePage({ params }: { params: Promise<{ locale
             </div>
           </div>
         )}
-
-        <div className="mb-20">
-          <LocalGuideChat locale={locale} dict={dict} />
-        </div>
 
         {/* Single, final CTA — booking is the natural next step after exploring, not an interruption. */}
         <div className="flex flex-col items-center gap-5 rounded-sm border border-champagne/30 bg-gradient-to-br from-graphite via-midnight to-graphite px-8 py-16 text-center">

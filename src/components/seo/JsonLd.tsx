@@ -10,6 +10,9 @@ export function lodgingBusinessJsonLd(input: {
   address: string;
   lat: number;
   lng: number;
+  locality?: string;
+  region?: string;
+  country?: string;
 }) {
   return {
     "@context": "https://schema.org",
@@ -18,7 +21,13 @@ export function lodgingBusinessJsonLd(input: {
     description: input.description,
     url: input.url,
     telephone: input.telephone,
-    address: { "@type": "PostalAddress", streetAddress: input.address },
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: input.address,
+      ...(input.locality ? { addressLocality: input.locality } : {}),
+      ...(input.region ? { addressRegion: input.region } : {}),
+      ...(input.country ? { addressCountry: input.country } : {}),
+    },
     geo: { "@type": "GeoCoordinates", latitude: input.lat, longitude: input.lng },
   };
 }

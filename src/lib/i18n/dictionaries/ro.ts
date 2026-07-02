@@ -60,7 +60,7 @@ const ro = {
     faq: "Întrebări frecvente",
     contact: "Contact",
     booking: "Rezervare",
-    portal: "Contul meu",
+    portal: "Cont client",
     admin: "Admin",
   },
   footer: {
@@ -167,7 +167,7 @@ const ro = {
     recommendedStay: "timp recomandat",
     recommendedStayValue: "2-3 zile",
     ctaTitle: "Ai descoperit zona. Acum rezervă-ți sejurul.",
-    ctaSubtitle: "Locul din care pornești în fiecare dimineață spre mănăstiri, natură și gastronomie locală.",
+    ctaSubtitle: "Locul din care pornești în fiecare dimineață spre obiective turistice, natură și gastronomie locală.",
   },
   faq: {
     title: "Întrebări frecvente",

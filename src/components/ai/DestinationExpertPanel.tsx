@@ -1,8 +1,12 @@
 import { buildDestinationCards } from "@/lib/destination-planner";
+import { getPropertyContactInfo } from "@/lib/data/property";
+import { destinationBase } from "@/lib/data/destination";
 import type { Locale } from "@/lib/i18n/config";
 
-export function DestinationExpertPanel({ locale }: { locale: Locale }) {
+export async function DestinationExpertPanel({ locale }: { locale: Locale }) {
   const cards = buildDestinationCards(locale).slice(0, 3);
+  const contact = await getPropertyContactInfo();
+  const areaLabel = contact.areaLabel || destinationBase.name;
   const isRo = locale === "ro";
 
   return (
@@ -10,11 +14,11 @@ export function DestinationExpertPanel({ locale }: { locale: Locale }) {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-champagne">AI Destination Expert</p>
-          <h2 className="mt-2 font-display text-3xl text-ivory md:text-4xl">Gura Humorului · Bucovina</h2>
+          <h2 className="mt-2 font-display text-3xl text-ivory md:text-4xl">{areaLabel}</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-stone">
             {isRo
-              ? "Itinerar vizual pentru 3 zile: mănăstiri UNESCO, natură, gastronomie locală și rute Google Maps pregătite pentru oaspeți."
-              : "A visual 3-day itinerary: UNESCO monasteries, nature, local food and Google Maps routes ready for guests."}
+              ? "Itinerar vizual pentru 3 zile: obiective turistice, natură, gastronomie locală și rute Google Maps pregătite pentru oaspeți."
+              : "A visual 3-day itinerary: local attractions, nature, local food and Google Maps routes ready for guests."}
           </p>
         </div>
         <span className="w-fit rounded-full border border-emerald/30 bg-emerald/10 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-emerald">

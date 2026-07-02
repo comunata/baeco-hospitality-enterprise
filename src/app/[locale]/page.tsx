@@ -38,13 +38,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <>
       <JsonLd
         data={lodgingBusinessJsonLd({
-          name: siteConfig.name,
+          name: contact.name || siteConfig.name,
           description: dict.seo.defaultDescription,
           url: `${siteConfig.domain}/${locale}`,
           telephone: contact.phone,
           address: contact.address,
           lat: contact.lat,
           lng: contact.lng,
+          locality: contact.locality,
+          region: contact.region,
+          country: contact.country,
         })}
       />
       <Hero locale={locale} dict={dict} />

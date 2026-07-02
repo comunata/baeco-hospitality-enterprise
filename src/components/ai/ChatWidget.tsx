@@ -13,7 +13,8 @@ interface Message {
   handoff?: boolean;
 }
 
-export function ChatWidget({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export function ChatWidget({ locale, dict, whatsapp }: { locale: Locale; dict: Dictionary; whatsapp?: string }) {
+  const whatsappNumber = whatsapp || siteConfig.contact.whatsapp;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -66,7 +67,7 @@ export function ChatWidget({ locale, dict }: { locale: Locale; dict: Dictionary 
                 {m.content}
                 {m.handoff && (
                   <a
-                    href={`https://wa.me/${siteConfig.contact.whatsapp}?text=${encodeURIComponent(dict.whatsapp.aiHandoff.replace("{{question}}", messages.at(-2)?.content ?? ""))}`}
+                    href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(dict.whatsapp.aiHandoff.replace("{{question}}", messages.at(-2)?.content ?? ""))}`}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-2 block text-xs font-medium uppercase tracking-widest text-emerald underline"

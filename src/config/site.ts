@@ -14,11 +14,15 @@ export const siteConfig = {
   domain: process.env.NEXT_PUBLIC_SITE_URL ?? "https://baeco-hospitality-enterprise.netlify.app",
   contact: {
     phone: "+40 754 417 713",
-    whatsapp: "40754417713",
+    whatsapp: "40757239757",
     email: "contact@baecodigital.ro",
     address: "Piața Republicii, nr. 1, 725300 Gura Humorului, România",
     lat: 47.5546,
     lng: 25.8898,
+    locality: "Gura Humorului",
+    county: "Suceava",
+    region: "Bucovina",
+    country: "România",
   },
   socials: {
     instagram: "",

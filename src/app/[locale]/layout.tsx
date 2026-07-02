@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ChatWidget } from "@/components/ai/ChatWidget";
 import { getModuleFlags } from "@/lib/data/settings";
+import { getPropertyContactInfo } from "@/lib/data/property";
 
 export function generateStaticParams() {
   return [{ locale: "ro" }, { locale: "en" }];
@@ -41,14 +42,14 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const dict = getDictionary(locale as Locale);
-  const moduleFlags = await getModuleFlags();
+  const [moduleFlags, contact] = await Promise.all([getModuleFlags(), getPropertyContactInfo()]);
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header locale={locale as Locale} dict={dict} />
       <main className="flex-1">{children}</main>
       <Footer locale={locale as Locale} dict={dict} />
-      {moduleFlags.aiConcierge && <ChatWidget locale={locale as Locale} dict={dict} />}
+      {moduleFlags.aiConcierge && <ChatWidget locale={locale as Locale} dict={dict} whatsapp={contact.whatsapp} />}
     </div>
   );
 }

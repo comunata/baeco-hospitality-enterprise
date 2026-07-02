@@ -169,7 +169,7 @@ const en: Dictionary = {
     recommendedStay: "recommended stay",
     recommendedStayValue: "2-3 days",
     ctaTitle: "You've discovered the area. Now book your stay.",
-    ctaSubtitle: "The base you'll return to every evening, minutes from monasteries, nature and local food.",
+    ctaSubtitle: "The base you'll return to every evening, minutes from local attractions, nature and local food.",
   },
   faq: {
     title: "Frequently asked questions",

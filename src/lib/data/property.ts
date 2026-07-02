@@ -28,9 +28,24 @@ export interface PropertyContactInfo {
   facebook: string;
   lat: number;
   lng: number;
+  /** Tourist location, admin-editable (see /admin/discovery setup). */
+  locality: string;
+  county: string;
+  region: string;
+  country: string;
+  /** Human-friendly "Locality, Region" label derived from the fields above. */
+  areaLabel: string;
+}
+
+/** "Locality, Region" (falls back to county, then blank) — used by AI prompts and UI copy. */
+function buildAreaLabel(locality: string, region: string, county: string): string {
+  return [locality, region || county].filter(Boolean).join(", ");
 }
 
 function defaults(): PropertyContactInfo {
+  const locality = siteConfig.contact.locality;
+  const county = siteConfig.contact.county;
+  const region = siteConfig.contact.region;
   return {
     name: siteConfig.legalName,
     email: siteConfig.contact.email,
@@ -43,6 +58,11 @@ function defaults(): PropertyContactInfo {
     facebook: siteConfig.socials.facebook,
     lat: siteConfig.contact.lat,
     lng: siteConfig.contact.lng,
+    locality,
+    county,
+    region,
+    country: siteConfig.contact.country,
+    areaLabel: buildAreaLabel(locality, region, county),
   };
 }
 
@@ -58,9 +78,16 @@ interface PropertyRow {
   facebook: string | null;
   lat: number | null;
   lng: number | null;
+  locality: string | null;
+  county: string | null;
+  region: string | null;
+  country: string | null;
 }
 
 function fromRow(row: PropertyRow, base: PropertyContactInfo): PropertyContactInfo {
+  const locality = row.locality || base.locality;
+  const county = row.county || base.county;
+  const region = row.region || base.region;
   return {
     name: row.name || base.name,
     email: row.email || base.email,
@@ -73,6 +100,11 @@ function fromRow(row: PropertyRow, base: PropertyContactInfo): PropertyContactIn
     facebook: row.facebook || base.facebook,
     lat: row.lat ?? base.lat,
     lng: row.lng ?? base.lng,
+    locality,
+    county,
+    region,
+    country: row.country || base.country,
+    areaLabel: buildAreaLabel(locality, region, county),
   };
 }
 
@@ -84,7 +116,7 @@ export async function getPropertyContactInfo(): Promise<PropertyContactInfo> {
       if (admin) {
         const { data, error } = await admin
           .from("properties")
-          .select("name, email, phone, whatsapp, address, check_in_time, check_out_time, instagram, facebook, lat, lng")
+          .select("name, email, phone, whatsapp, address, check_in_time, check_out_time, instagram, facebook, lat, lng, locality, county, region, country")
           .limit(1);
         if (!error && data && data.length > 0) return fromRow(data[0] as PropertyRow, base);
       }
