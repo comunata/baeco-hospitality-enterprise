@@ -4,8 +4,7 @@ import { getRooms } from "@/lib/data/rooms";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/pages/PageHeader";
 import { Section } from "@/components/ui/Section";
-import { RoomCard } from "@/components/rooms/RoomCard";
-import { RoomFinderChat } from "@/components/ai/RoomFinderChat";
+import { RoomsExplorer } from "@/components/rooms/RoomsExplorer";
 import type { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -26,12 +25,7 @@ export default async function RoomsPage({ params }: { params: Promise<{ locale: 
     <>
       <PageHeader eyebrow={dict.nav.rooms} title={dict.rooms.title} />
       <Section>
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {rooms.map((room) => (
-            <RoomCard key={room.id} room={room} locale={locale} dict={dict} />
-          ))}
-        </div>
-        <RoomFinderChat locale={locale} dict={dict} />
+        <RoomsExplorer rooms={rooms} locale={locale} dict={dict} />
       </Section>
     </>
   );

@@ -217,11 +217,11 @@ export default async function ExplorePage({ params }: { params: Promise<{ locale
           <LocalGuideChat
             locale={locale}
             dict={dict}
-            title={locale === "ro" ? "Ghid local AI" : "Local AI Guide"}
+            title={locale === "ro" ? "Travel Guide AI" : "Travel Guide AI"}
             subtitle={
               locale === "ro"
-                ? "Primește recomandări pentru zona din jurul proprietății."
-                : "Get recommendations for the area around the property."
+                ? "Creează trasee personalizate și recomandă obiective, restaurante și activități în funcție de timpul disponibil și preferințele tale."
+                : "Creates personalized itineraries and recommends attractions, restaurants and activities based on your available time and preferences."
             }
           />
         </div>

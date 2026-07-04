@@ -25,7 +25,15 @@ interface RoomHit {
   bookingUrl?: string;
 }
 
-export function RoomFinderChat({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export function RoomFinderChat({
+  locale,
+  dict,
+  onRecommend,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+  onRecommend?: (slugs: string[]) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [checkIn, setCheckIn] = useState(today());
   const [checkOut, setCheckOut] = useState(tomorrow());
@@ -56,8 +64,10 @@ export function RoomFinderChat({ locale, dict }: { locale: Locale; dict: Diction
         }),
       });
       const data = await res.json();
+      const hits: RoomHit[] = Array.isArray(data.rooms) ? data.rooms : [];
       setAnswer(data.answer ?? dict.errors.generic);
-      setRooms(Array.isArray(data.rooms) ? data.rooms : []);
+      setRooms(hits);
+      onRecommend?.(hits.filter((r) => r.available !== false).map((r) => r.slug));
     } catch {
       setAnswer(dict.errors.generic);
     } finally {
