@@ -24,7 +24,7 @@ export function PageHeader({ eyebrow, title, subtitle }: { eyebrow?: string; tit
       <Container className="relative z-10">
         <div className="max-w-3xl animate-fade-up">
           {eyebrow && <p className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-champagne">{eyebrow}</p>}
-          <h1 className="font-display text-4xl leading-[1.05] text-ivory md:text-6xl">{title}</h1>
+          <h1 className="heading-glow font-display text-4xl leading-[1.05] text-ivory md:text-6xl">{title}</h1>
           {subtitle && <p className="mt-5 max-w-2xl text-base leading-7 text-stone md:text-lg">{subtitle}</p>}
         </div>
       </Container>

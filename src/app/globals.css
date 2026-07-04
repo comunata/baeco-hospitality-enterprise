@@ -73,6 +73,17 @@ body {
   font-family: var(--font-display);
 }
 
+/* Premium hover/touch glow for hero and page-header titles — restrained,
+   no color shift, just a soft champagne/ivory halo. :active covers touch
+   feedback on mobile where :hover never fires. */
+.heading-glow {
+  transition: text-shadow 300ms ease;
+}
+.heading-glow:hover,
+.heading-glow:active {
+  text-shadow: 0 0 24px rgba(214, 179, 106, 0.5), 0 0 6px rgba(245, 243, 238, 0.3);
+}
+
 /* Thin, luxurious scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

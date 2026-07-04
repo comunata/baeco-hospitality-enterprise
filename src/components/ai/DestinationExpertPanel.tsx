@@ -54,7 +54,12 @@ export async function DestinationExpertPanel({ locale }: { locale: Locale }) {
                         <span className="rounded-full bg-champagne/15 px-2 py-0.5 text-xs font-semibold tracking-wide text-champagne">{stop.time}</span>{" "}
                         <span className="ml-1">{stop.name}</span>
                       </p>
-                      <a href={stop.mapsLink} target="_blank" rel="noreferrer" className="rounded-full border border-emerald/30 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald transition hover:bg-emerald/10">
+                      <a
+                        href={stop.mapsLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-emerald/30 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald transition-all duration-300 hover:bg-emerald/10 hover:shadow-[0_0_14px_rgba(14,94,85,0.3)] active:scale-95"
+                      >
                         {isRo ? "Hartă" : "Map"}
                       </a>
                     </div>

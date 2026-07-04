@@ -80,7 +80,7 @@ export function RoomFinderChat({
       <div className="mt-10 flex justify-center">
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-3 rounded-full border border-champagne/40 bg-graphite px-6 py-3 text-xs font-medium uppercase tracking-widest text-champagne hover:bg-champagne/10"
+          className="flex items-center gap-3 rounded-full border border-champagne/40 bg-graphite px-6 py-3 text-xs font-medium uppercase tracking-widest text-champagne transition-all duration-300 hover:bg-champagne/10 hover:shadow-[0_0_18px_rgba(214,179,106,0.25)] active:scale-[0.97]"
         >
           <AiAvatar kind="roomFinder" size={28} />
           {dict.ai.roomFinder.cta}
@@ -164,7 +164,7 @@ export function RoomFinderChat({
       <button
         onClick={submit}
         disabled={loading}
-        className="mt-6 rounded-sm bg-champagne px-6 py-3 text-xs font-medium uppercase tracking-widest text-midnight disabled:opacity-60"
+        className="mt-6 rounded-sm bg-champagne px-6 py-3 text-xs font-medium uppercase tracking-widest text-midnight transition-all duration-300 hover:bg-champagne/90 hover:shadow-[0_0_22px_rgba(214,179,106,0.4)] active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100"
       >
         {loading ? dict.common.loading : dict.ai.roomFinder.submit}
       </button>
