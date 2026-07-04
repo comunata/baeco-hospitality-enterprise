@@ -74,7 +74,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 50,
     tags: ["unesco", "tradiții"],
     goodFor: ["family", "culture", "rainy-day"],
-    image: "/images/explore/0b426843dddfece952b3c3aa027bd354.jpg",
+    image: "/images/hero/955003c3edb995693e4f9f327f5498f4.jpg",
     mapsQuery: "Manastirea Humor Gura Humorului",
   },
   {
@@ -100,7 +100,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 90,
     tags: ["aventură", "adrenalină", "outdoor"],
     goodFor: ["adventure", "kids", "family"],
-    image: "/images/explore/bicaz-lake.webp",
+    image: "/images/explore/cabin-lake.webp",
     mapsQuery: "Mega Tiroliana Bucovina Gura Humorului",
     reservationNote: { ro: "Verifică programul și disponibilitatea înainte de plecare.", en: "Check schedule and availability before departure." },
   },
@@ -114,7 +114,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 180,
     tags: ["familie", "tren", "experiență"],
     goodFor: ["family", "kids", "romantic"],
-    image: "/images/explore/cabin-lake.webp",
+    image: "/images/explore/2dfb12d1da3716e851848a54d2a77121.jpg",
     mapsQuery: "Mocanita Hutulca Moldovita",
     reservationNote: { ro: "Recomandă rezervare online, mai ales în weekend și sezon.", en: "Online booking is recommended, especially weekends and high season." },
   },
@@ -180,7 +180,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 45,
     tags: ["meșteșug", "suveniruri"],
     goodFor: ["family", "kids", "rainy-day", "culture"],
-    image: "/images/explore/cheese-cellar.webp",
+    image: "/images/gallery/70b9559d8b912a2b9c7cdee290b424c1.jpg",
     mapsQuery: "Ceramica Neagra Marginea",
   },
   {
@@ -193,7 +193,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 90,
     tags: ["istorie", "muzeu"],
     goodFor: ["family", "kids", "rainy-day", "culture"],
-    image: "/images/explore/2dfb12d1da3716e851848a54d2a77121.jpg",
+    image: "/images/explore/7da693d35809543df6b6f00e974dbadf.jpg",
     mapsQuery: "Cetatea de Scaun a Sucevei",
   },
   {
@@ -206,7 +206,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 75,
     tags: ["tradiții", "muzeu"],
     goodFor: ["family", "kids", "rainy-day", "culture"],
-    image: "/images/gallery/3bfeada71694cf98d7dff7bba429318e.jpg",
+    image: "/images/explore/aad6d71e5cc8168f3b107ef126924f95.jpg",
     mapsQuery: "Muzeul Satului Bucovinean Suceava",
   },
   {
@@ -232,7 +232,7 @@ export const destinationPlaces: DestinationPlace[] = [
     visitMinutes: 75,
     tags: ["gastronomie", "local"],
     goodFor: ["family", "romantic", "culture"],
-    image: "/images/restaurant/cheese-producer.webp",
+    image: "/images/restaurant/bistro-local.webp",
     mapsQuery: "restaurant traditional Gura Humorului Bucovina",
   },
 ];

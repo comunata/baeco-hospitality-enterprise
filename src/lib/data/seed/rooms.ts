@@ -53,7 +53,7 @@ export const seedRooms: Room[] = [
       ro: "Apartament în regim hotelier cu două camere, bucătărie complet utilată și spațiu generos pentru familii.",
       en: "A two-bedroom serviced apartment with a fully equipped kitchen and generous space for families.",
     },
-    gallery: ["/images/rooms/family-apartment-1.webp", "/images/gallery/3f698bc9766d1150b80be2779192778a.jpg"],
+    gallery: ["/images/rooms/family-apartment-1.webp", "/images/rooms/family-apartment-2.webp"],
     coverImage: "/images/rooms/family-apartment-1.webp",
     maxAdults: 4,
     maxChildren: 2,
