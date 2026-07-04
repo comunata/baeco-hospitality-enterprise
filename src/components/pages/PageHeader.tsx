@@ -4,8 +4,8 @@ function heroImageFor(eyebrow?: string, title?: string) {
   const key = `${eyebrow ?? ""} ${title ?? ""}`.toLowerCase();
   if (/(restaurant|restaurant)/.test(key)) return "/images/restaurant/restaurant-terrace.webp";
   if (/(spa|wellness|piscin|pool)/.test(key)) return "/images/wellness/pool.webp";
-  if (/(galer|gallery)/.test(key)) return "/images/hero/b598dedbd81e9a4aa89d632f77b96418.jpg";
-  if (/(explore|zon|bucovina)/.test(key)) return "/images/explore/voronet.webp";
+  if (/(galer|gallery)/.test(key)) return "/images/explore/voronet.webp";
+  if (/(explore|zon|bucovina)/.test(key)) return "/images/explore/sucevita.webp";
   if (/(rezerv|booking|disponibilitate|availability)/.test(key)) return "/images/hero/hero-room.webp";
   if (/(camere|rooms|suite)/.test(key)) return "/images/rooms/deluxe-garden-1.webp";
   if (/(ofert|offers)/.test(key)) return "/images/restaurant/restaurant-interior.webp";
