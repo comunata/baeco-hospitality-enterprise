@@ -10,10 +10,10 @@ export interface PageContent {
 
 const restaurantImages = [
   "/images/restaurant/467cb81481e3c6f0ceec4f94ede12692.jpg",
-  "/images/restaurant/4c388507a21c0e7f441718cd1a3bfac8.jpg",
-  "/images/restaurant/6fde2705e59dddd8c891df7e0b964760.jpg",
+  "/images/restaurant/restaurant-terrace.webp",
+  "/images/restaurant/restaurant-interior.webp",
   "/images/restaurant/c92dde8d4369405b0faf4ce5b985b8d0.jpg",
-  "/images/restaurant/fd812639e4dbbf241af4762c4c13857d.jpg",
+  "/images/restaurant/breakfast-lake.webp",
 ];
 
 const spaPoolImages = [
@@ -22,20 +22,18 @@ const spaPoolImages = [
 ];
 
 const facilitiesImages = [
-  "/images/gallery/3bfeada71694cf98d7dff7bba429318e.jpg",
-  "/images/gallery/63015d86a5eaf973696900bca4544616.jpg",
-  "/images/gallery/c2466b8c95bc9d6076280416cac6dc4b.jpg",
+  "/images/gallery/3f698bc9766d1150b80be2779192778a.jpg",
+  "/images/wellness/pool.webp",
+  "/images/gallery/70b9559d8b912a2b9c7cdee290b424c1.jpg",
 ];
 
 const galleryImages = [
-  "/images/gallery/3bfeada71694cf98d7dff7bba429318e.jpg",
   "/images/gallery/3f698bc9766d1150b80be2779192778a.jpg",
-  "/images/gallery/63015d86a5eaf973696900bca4544616.jpg",
+  "/images/rooms/deluxe-garden-1.webp",
+  "/images/restaurant/restaurant-terrace.webp",
   "/images/gallery/70b9559d8b912a2b9c7cdee290b424c1.jpg",
-  "/images/gallery/a7f8bb7a621b44ba977b3c300d6fb131.jpg",
-  "/images/gallery/c2466b8c95bc9d6076280416cac6dc4b.jpg",
-  "/images/gallery/d0e7cedd7aec94d497b3ab1a9bb34488.jpg",
-  "/images/hero/955003c3edb995693e4f9f327f5498f4.jpg",
+  "/images/wellness/pool.webp",
+  "/images/rooms/panorama-villa-1.webp",
 ];
 
 export const seedPages: Record<string, PageContent> = {
