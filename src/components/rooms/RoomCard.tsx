@@ -6,12 +6,24 @@ import type { Dictionary } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 
-export function RoomCard({ room, locale, dict, priority = false }: { room: Room; locale: Locale; dict: Dictionary; priority?: boolean }) {
+export function RoomCard({
+  room,
+  locale,
+  dict,
+  priority = false,
+  recommended = false,
+}: {
+  room: Room;
+  locale: Locale;
+  dict: Dictionary;
+  priority?: boolean;
+  recommended?: boolean;
+}) {
   const name = room.name[locale] ?? room.name.en;
   const description = room.description[locale] ?? room.description.en;
 
   return (
-    <Card className="group overflow-hidden">
+    <Card className={`group overflow-hidden ${recommended ? "border-champagne/50 ring-1 ring-champagne/40" : ""}`}>
       <Link href={`/${locale}/rooms/${room.slug}`} className="block">
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image
@@ -22,6 +34,11 @@ export function RoomCard({ room, locale, dict, priority = false }: { room: Room;
             priority={priority}
             className="object-cover transition-transform duration-700 group-hover:scale-105"
           />
+          {recommended && (
+            <span className="absolute left-3 top-3 rounded-full bg-champagne px-3 py-1 text-[10px] font-medium uppercase tracking-widest text-midnight">
+              {dict.rooms.recommendedBadge}
+            </span>
+          )}
         </div>
         <div className="p-6">
           <h3 className="font-display text-2xl text-ivory">{name}</h3>

@@ -115,6 +115,9 @@ const en: Dictionary = {
     priceFrom: "Price from",
     checkAvailability: "Check availability",
     noRooms: "No rooms available for the selected criteria.",
+    aiFinderTitle: "Not sure which room to choose?",
+    aiFinderSubtitle: "Let Room Finder AI recommend your perfect room in under 30 seconds.",
+    recommendedBadge: "Recommended for you",
   },
   booking: {
     step1: "Availability",

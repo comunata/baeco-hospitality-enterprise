@@ -25,7 +25,15 @@ interface RoomHit {
   bookingUrl?: string;
 }
 
-export function RoomFinderChat({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export function RoomFinderChat({
+  locale,
+  dict,
+  onRecommend,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+  onRecommend?: (slugs: string[]) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [checkIn, setCheckIn] = useState(today());
   const [checkOut, setCheckOut] = useState(tomorrow());
@@ -56,8 +64,10 @@ export function RoomFinderChat({ locale, dict }: { locale: Locale; dict: Diction
         }),
       });
       const data = await res.json();
+      const hits: RoomHit[] = Array.isArray(data.rooms) ? data.rooms : [];
       setAnswer(data.answer ?? dict.errors.generic);
-      setRooms(Array.isArray(data.rooms) ? data.rooms : []);
+      setRooms(hits);
+      onRecommend?.(hits.filter((r) => r.available !== false).map((r) => r.slug));
     } catch {
       setAnswer(dict.errors.generic);
     } finally {
@@ -70,7 +80,7 @@ export function RoomFinderChat({ locale, dict }: { locale: Locale; dict: Diction
       <div className="mt-10 flex justify-center">
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-3 rounded-full border border-champagne/40 bg-graphite px-6 py-3 text-xs font-medium uppercase tracking-widest text-champagne hover:bg-champagne/10"
+          className="flex items-center gap-3 rounded-full border border-champagne/40 bg-graphite px-6 py-3 text-xs font-medium uppercase tracking-widest text-champagne transition-all duration-300 hover:bg-champagne/10 hover:shadow-[0_0_18px_rgba(214,179,106,0.25)] active:scale-[0.97]"
         >
           <AiAvatar kind="roomFinder" size={28} />
           {dict.ai.roomFinder.cta}
@@ -154,7 +164,7 @@ export function RoomFinderChat({ locale, dict }: { locale: Locale; dict: Diction
       <button
         onClick={submit}
         disabled={loading}
-        className="mt-6 rounded-sm bg-champagne px-6 py-3 text-xs font-medium uppercase tracking-widest text-midnight disabled:opacity-60"
+        className="mt-6 rounded-sm bg-champagne px-6 py-3 text-xs font-medium uppercase tracking-widest text-midnight transition-all duration-300 hover:bg-champagne/90 hover:shadow-[0_0_22px_rgba(214,179,106,0.4)] active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100"
       >
         {loading ? dict.common.loading : dict.ai.roomFinder.submit}
       </button>
