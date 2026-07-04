@@ -13,7 +13,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
   if (!session.authenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-midnight px-6 text-center">
+      <div className="flex min-h-screen items-start justify-center bg-midnight px-6 pt-[14vh] text-center sm:pt-[16vh]">
         <PortalLoginForm dict={dict} />
       </div>
     );
