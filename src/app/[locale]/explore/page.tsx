@@ -21,11 +21,13 @@ import type { Attraction, LocalEvent } from "@/lib/types";
 // Falls back to a category-appropriate pool below for anything without a
 // dedicated match (e.g. attractions added later from the admin panel).
 const attractionImageOverrides: Record<string, string> = {
+  "attr-old-town": "/images/gallery/70b9559d8b912a2b9c7cdee290b424c1.jpg",
   "attr-lake-trail": "/images/explore/bicaz-lake.webp",
+  "attr-fortress": "/images/explore/7da693d35809543df6b6f00e974dbadf.jpg",
   "attr-trattoria": "/images/restaurant/restaurant-terrace.webp",
   "attr-local-bistro": "/images/restaurant/bistro-local.webp",
   "attr-coffee-house": "/images/restaurant/cafe-house.webp",
-  "attr-farmers-market": "/images/gallery/3bfeada71694cf98d7dff7bba429318e.jpg",
+  "attr-farmers-market": "/images/restaurant/breakfast-lake.webp",
   "attr-cheese-producer": "/images/restaurant/cheese-producer.webp",
 };
 
@@ -45,8 +47,8 @@ const categoryImagePools: Record<Attraction["category"], string[]> = {
     "/images/restaurant/breakfast-lake.webp",
   ],
   cafe: ["/images/restaurant/cafe-house.webp", "/images/restaurant/cafe-interior-alt.jpg"],
-  market: ["/images/gallery/3bfeada71694cf98d7dff7bba429318e.jpg", "/images/restaurant/cheese-producer.webp"],
-  shop: ["/images/gallery/3bfeada71694cf98d7dff7bba429318e.jpg", "/images/restaurant/cheese-producer.webp"],
+  market: ["/images/restaurant/breakfast-lake.webp", "/images/restaurant/cheese-producer.webp"],
+  shop: ["/images/restaurant/breakfast-lake.webp", "/images/restaurant/cheese-producer.webp"],
   producer: ["/images/restaurant/cheese-producer.webp", "/images/explore/cheese-cellar.webp"],
 };
 
