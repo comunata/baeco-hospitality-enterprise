@@ -245,7 +245,7 @@ const ro = {
       invalidCode: "Email/telefon sau cod de rezervare incorect.",
       genericError: "A apărut o eroare. Încearcă din nou.",
       signInTitle: "Portal Client",
-      signInSubtitle: "Introdu emailul sau telefonul folosit la rezervare, împreună cu codul de rezervare (BD-XXXXXX) primit pe email.",
+      signInSubtitle: "Codul de rezervare se găsește în emailul de confirmare.",
     },
   },
   admin: {

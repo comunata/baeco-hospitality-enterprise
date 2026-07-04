@@ -247,7 +247,7 @@ const en: Dictionary = {
       invalidCode: "Incorrect email/phone or booking code.",
       genericError: "Something went wrong. Please try again.",
       signInTitle: "Guest Portal",
-      signInSubtitle: "Enter the email or phone used for your booking, along with the booking code (BD-XXXXXX) from your confirmation email.",
+      signInSubtitle: "Your booking code is in your confirmation email.",
     },
   },
   admin: {
