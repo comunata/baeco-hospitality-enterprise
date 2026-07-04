@@ -5,7 +5,7 @@ import path from "path";
 import { revalidatePath } from "next/cache";
 import { assertAdminRole } from "@/lib/admin/session";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { validateUpload, processImageToWebp } from "@/lib/media/imagePipeline";
+import { validateUpload, processImageUpload } from "@/lib/media/imagePipeline";
 import { createMediaItemRecord, type MediaOwnerType } from "@/lib/data/media";
 import { getRoomById } from "@/lib/data/rooms";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -95,8 +95,8 @@ export async function POST(request: NextRequest) {
 
     try {
       const inputBuffer = Buffer.from(await file.arrayBuffer());
-      const processed = await processImageToWebp(inputBuffer);
-      const filename = `${randomUUID()}.webp`;
+      const processed = await processImageUpload(inputBuffer, file.type);
+      const filename = `${randomUUID()}.${processed.extension}`;
 
       let url: string;
       let storagePath: string | null = null;
