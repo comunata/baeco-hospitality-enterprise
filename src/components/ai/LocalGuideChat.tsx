@@ -86,7 +86,7 @@ export function LocalGuideChat({
       </div>
       <div className="mt-5 flex flex-wrap gap-2">
         {suggestions.map((s) => (
-          <button key={s} onClick={() => send(s)} className="rounded-full border border-champagne/30 bg-midnight/35 px-3 py-1.5 text-xs text-champagne transition hover:bg-champagne/10">
+          <button key={s} onClick={() => send(s)} className="rounded-full border border-champagne/30 bg-midnight/35 px-3 py-1.5 text-xs text-champagne transition-all duration-300 hover:bg-champagne/10 hover:shadow-[0_0_14px_rgba(214,179,106,0.25)] active:scale-95">
             {s}
           </button>
         ))}
@@ -124,7 +124,12 @@ export function LocalGuideChat({
                                     <span className="rounded-full bg-champagne/15 px-1.5 py-0.5 text-[10px] font-semibold text-champagne">{stop.time}</span>{" "}
                                     <span className="ml-0.5">{stop.name}</span>
                                   </p>
-                                  <a href={stop.mapsLink} target="_blank" rel="noreferrer" className="shrink-0 text-[10px] uppercase tracking-widest text-emerald underline">
+                                  <a
+                                    href={stop.mapsLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="shrink-0 rounded-full border border-emerald/30 px-2 py-0.5 text-[10px] uppercase tracking-widest text-emerald transition-all duration-300 hover:bg-emerald/10 hover:shadow-[0_0_14px_rgba(14,94,85,0.3)] active:scale-95"
+                                  >
                                     {isRo ? "Hartă" : "Map"}
                                   </a>
                                 </div>
@@ -157,7 +162,7 @@ export function LocalGuideChat({
           placeholder={dict.ai.localGuide.placeholder}
           className="flex-1 rounded-sm border border-platinum/20 bg-midnight px-4 py-3 text-sm text-ivory placeholder:text-stone focus:border-champagne focus:outline-none"
         />
-        <button onClick={() => send()} className="rounded-sm bg-champagne px-5 text-xs font-medium uppercase tracking-widest text-midnight">
+        <button onClick={() => send()} className="rounded-sm bg-champagne px-5 text-xs font-medium uppercase tracking-widest text-midnight transition-all duration-300 hover:bg-champagne/90 hover:shadow-[0_0_18px_rgba(214,179,106,0.4)] active:scale-[0.97]">
           →
         </button>
       </div>

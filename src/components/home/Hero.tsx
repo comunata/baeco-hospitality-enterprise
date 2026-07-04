@@ -15,7 +15,7 @@ export function Hero({ locale, dict }: { locale: Locale; dict: Dictionary }) {
       <Container className="relative z-10 pb-16 pt-40">
         <div className="max-w-2xl animate-fade-up">
           <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-champagne">{dict.common.brand}</p>
-          <h1 className="font-display text-5xl leading-[1.05] text-ivory md:text-7xl">{dict.home.heroTitle}</h1>
+          <h1 className="heading-glow font-display text-5xl leading-[1.05] text-ivory md:text-7xl">{dict.home.heroTitle}</h1>
           <p className="mt-6 max-w-lg text-base text-stone md:text-lg">{dict.home.heroSubtitle}</p>
         </div>
 

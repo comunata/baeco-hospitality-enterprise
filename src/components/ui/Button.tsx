@@ -4,13 +4,14 @@ import { cn } from "@/lib/utils";
 type Variant = "primary" | "secondary" | "ghost";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-champagne text-midnight hover:bg-champagne/90",
-  secondary: "border border-platinum/40 text-ivory hover:border-champagne hover:text-champagne",
+  primary: "bg-champagne text-midnight hover:bg-champagne/90 hover:shadow-[0_0_22px_rgba(214,179,106,0.4)]",
+  secondary:
+    "border border-platinum/40 text-ivory hover:border-champagne hover:text-champagne hover:shadow-[0_0_18px_rgba(214,179,106,0.2)]",
   ghost: "text-ivory hover:text-champagne",
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-sm px-7 py-3.5 text-sm font-medium uppercase tracking-[0.15em] transition-colors duration-300";
+  "inline-flex items-center justify-center gap-2 rounded-sm px-7 py-3.5 text-sm font-medium uppercase tracking-[0.15em] transition-all duration-300 active:scale-[0.97]";
 
 export function Button({
   variant = "primary",

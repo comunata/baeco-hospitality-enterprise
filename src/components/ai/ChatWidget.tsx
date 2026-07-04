@@ -90,7 +90,7 @@ export function ChatWidget({ locale, dict, whatsapp }: { locale: Locale; dict: D
               placeholder={dict.ai.concierge.placeholder}
               className="flex-1 rounded-sm border border-platinum/20 bg-midnight px-3 py-2 text-sm text-ivory placeholder:text-stone focus:border-champagne focus:outline-none"
             />
-            <button onClick={send} className="rounded-sm bg-champagne px-3 py-2 text-xs font-medium uppercase tracking-widest text-midnight">
+            <button onClick={send} className="rounded-sm bg-champagne px-3 py-2 text-xs font-medium uppercase tracking-widest text-midnight transition-all duration-300 hover:bg-champagne/90 hover:shadow-[0_0_18px_rgba(214,179,106,0.4)] active:scale-[0.97]">
               →
             </button>
           </div>
@@ -98,7 +98,7 @@ export function ChatWidget({ locale, dict, whatsapp }: { locale: Locale; dict: D
       )}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="shadow-xl transition-transform hover:scale-105"
+        className="shadow-xl transition-all duration-300 hover:scale-105 hover:drop-shadow-[0_0_16px_rgba(214,179,106,0.45)] active:scale-100"
         aria-label={dict.ai.concierge.title}
       >
         <AiAvatar kind="concierge" size={56} />
