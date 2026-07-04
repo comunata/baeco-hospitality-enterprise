@@ -113,6 +113,9 @@ const ro = {
     priceFrom: "Preț de la",
     checkAvailability: "Verifică disponibilitate",
     noRooms: "Nu există camere disponibile pentru criteriile selectate.",
+    aiFinderTitle: "Nu știi ce cameră să alegi?",
+    aiFinderSubtitle: "Lasă Room Finder AI să îți recomande camera perfectă în mai puțin de 30 de secunde.",
+    recommendedBadge: "Recomandată pentru tine",
   },
   booking: {
     step1: "Disponibilitate",
