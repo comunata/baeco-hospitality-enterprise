@@ -218,7 +218,7 @@ export async function getMediaItemById(id: string): Promise<MediaItem | undefine
 export async function createMediaItemRecord(
   ownerType: MediaOwnerType,
   ownerId: string | null,
-  input: { url: string; storagePath: string | null; width: number; height: number; sizeBytes: number }
+  input: { url: string; storagePath: string | null; width: number | null; height: number | null; sizeBytes: number }
 ): Promise<MediaItem> {
   const existing = await getMediaItems(ownerType, ownerId);
   const nextSortOrder = existing.length > 0 ? Math.max(...existing.map((img) => img.sortOrder)) + 1 : 0;
